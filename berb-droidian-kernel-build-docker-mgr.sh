@@ -1,9 +1,9 @@
 #!/bin/bash
 
 
-TOOL_NOM='berb-droidian-kernel-build-docker-mgr'
-TOOL_VERSIO='1.0.0.3'
-TOOL_BRANCA='testing'
+TOOL_NAME='berb-droidian-kernel-build-docker-mgr'
+TOOL_VERSION='1.0.0.3'
+TOOL_BRANCh="release/${TOOL_VERSION}"
 
 # Not used yet by this script:
 # VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
