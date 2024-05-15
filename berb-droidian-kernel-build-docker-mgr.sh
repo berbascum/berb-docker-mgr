@@ -49,7 +49,7 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
 
   # v_1.0.0-3: name changed from "droidian-manage-docker-container to "berb-droidian-kernel-build-docker-mgr"
     # New: fn_configura_sudo
-    # New: fn_configura_build_env
+    # New: fn_build_env_base_paths_config
     # New: Implemented kernel path auto detection
     # New: Basic check to determine if start dir a kernel source root dir.
     # New: fn_create_outputs_backup: After compilation, script archives most output relevant files and archive them to tar.gz
@@ -105,7 +105,7 @@ fn_verificacions_path() {
     [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
 }
 
-fn_configura_build_env() {
+fn_build_env_base_paths_config() {
 	# Set SOURCES_PATH to parent kernel dir
 	SOURCES_PATH="$(dirname ${START_DIR})"
 	## get kernel info
@@ -122,11 +122,17 @@ fn_configura_build_env() {
 	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
 	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
 	## Create kernel build output dirs
+  	[ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
   	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
   	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
   	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
   	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
   	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
+}
+
+fn_kernel_info_mk_check() {
+	## Check for kernel-info.mk
+	[ -f "${KERNEL_INFO_MK}" ] || abort "kernel-info.mk file not found!"
 
 	## Kernel Info constants
 	KERNEL_BASE_VERSION=$(cat $KERNEL_INFO_MK | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
@@ -136,22 +142,6 @@ fn_configura_build_env() {
 	DEVICE_ARCH==$(cat $KERNEL_INFO_MK | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
 	## Backups info
 	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
-	## Prints kernel paths
-	echo && "Config defined:"
-	echo && echo "KERNEL_NAME $KERNEL_NAME"
-	echo "KERNEL_BASE_VERSION = $KERNEL_BASE_VERSION"
-	echo "KERNEL_DIR = $KERNEL_DIR"
-	echo "DEVICE_DEFCONFIG_FILE = $DEVICE_DEFCONFIG_FILE"
-	echo "KERNEL_BUILD_OUT_KOBJ_PATH =$KERNEL_BUILD_OUT_KOBJ_PATH"
-	echo "PACKAGES_DIR = $PACKAGES_DIR"
-	echo "KERNEL_BUILD_OUT_DEBS_PATH = $KERNEL_BUILD_OUT_DEBS_PATH"
-	echo "KERNEL_BUILD_OUT_DEBIAN_PATH = $KERNEL_BUILD_OUT_DEBIAN_PATH"
-	echo "KERNEL_BUILD_OUT_LOGS_PATH = $KERNEL_BUILD_OUT_LOGS_PATH"
-	echo "KERNEL_BUILD_OUT_OTHER_PATH = $KERNEL_BUILD_OUT_OTHER_PATH"
-	echo "DEVICE_VENDOR = $DEVICE_VENDOR"
-	echo "DEVICE_MODEL = $DEVICE_MODEL"
-	echo "DEVICE_ARCH = $DEVICE_ARCH"
-	read -p "Continue..."
 
 	## Depends  ## To do: Get deps from kernel-info.mk
 	APT_INSTALL_DEPS="net-tools vim locate git linux-packaging-snippets linux-initramfs-halium-generic:arm64 binutils-aarch64-linux-gnu \
@@ -163,7 +153,7 @@ fn_configura_build_env() {
 	DEFAULT_CONTAINER_NAME='droidian-build-env'
 	CONTAINER_NAME="$DEFAULT_CONTAINER_NAME"
 	CONTAINER_COMMITED_NAME='droidian-build-env-custom'
-	IMAGE_BASE_NAME='quay.io/droidian/build-essential:bookworm-amd64'
+	IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
 	IMAGE_BASE_TAG='bookworm-amd64'
 	IMAGE_COMMIT_NAME='custom/build-essential'
 	IMAGE_COMMIT_TAG='bookworm-amd64'
@@ -346,6 +336,10 @@ fn_cmd_on_container() {
 ## Kernel build functions ##
 ############################
 fn_build_kernel_on_container() {
+## Revisar on cal cridar-la:
+fn_kernel_info_mk_check
+
+
 	[ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
 	# Script creation to launch compilation inside the container.
 	echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
@@ -424,6 +418,25 @@ fn_create_outputs_backup() {
 	cd $START_DIR
 }
 
+fn_print_vars() {
+    ## Prints kernel paths
+    echo && "Config defined:"
+    echo && echo "KERNEL_NAME $KERNEL_NAME"
+    echo "KERNEL_BASE_VERSION = $KERNEL_BASE_VERSION"
+    echo "KERNEL_DIR = $KERNEL_DIR"
+    echo "DEVICE_DEFCONFIG_FILE = $DEVICE_DEFCONFIG_FILE"
+    echo "KERNEL_BUILD_OUT_KOBJ_PATH =$KERNEL_BUILD_OUT_KOBJ_PATH"
+    echo "PACKAGES_DIR = $PACKAGES_DIR"
+    echo "KERNEL_BUILD_OUT_DEBS_PATH = $KERNEL_BUILD_OUT_DEBS_PATH"
+    echo "KERNEL_BUILD_OUT_DEBIAN_PATH = $KERNEL_BUILD_OUT_DEBIAN_PATH"
+    echo "KERNEL_BUILD_OUT_LOGS_PATH = $KERNEL_BUILD_OUT_LOGS_PATH"
+    echo "KERNEL_BUILD_OUT_OTHER_PATH = $KERNEL_BUILD_OUT_OTHER_PATH"
+    echo "DEVICE_VENDOR = $DEVICE_VENDOR"
+    echo "DEVICE_MODEL = $DEVICE_MODEL"
+    echo "DEVICE_ARCH = $DEVICE_ARCH"
+    read -p "Continue..."
+} 
+
 ############################
 ## Start script execution ##
 ############################
@@ -431,9 +444,11 @@ fn_create_outputs_backup() {
 fn_ip_forward_activa
 fn_configura_sudo
 fn_verificacions_path
-fn_configura_build_env
+fn_build_env_base_paths_config
 fn_action_prompt
 fn_set_container_commit_if_exists
+
+fn_print_vars
 echo
 
 ## Execute action on container name
@@ -450,7 +465,7 @@ elif [ "$ACTION" == "shell-to" ]; then
 #elif [ "$ACTION" == "command-to" ]; then
 #	fn_cmd_on_container
 #elif [ "$ACTION" == "setup-build-env" ]; then
-#	fn_configura_build_env
+#	fn_build_env_base_paths_config
 elif [ "$ACTION" == "install-apt-deps" ]; then
 	fn_install_apt_deps
 elif [ "$ACTION" == "commit-container" ]; then
