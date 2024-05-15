@@ -106,26 +106,28 @@ fn_verificacions_path() {
 }
 
 fn_configura_build_env() {
+	# Set SOURCES_PATH to parent kernel dir
+	SOURCES_PATH="$(dirname ${START_DIR})"
 	## get kernel info
 	KERNEL_DIR="${START_DIR}"
 	KERNEL_INFO_MK="$KERNEL_DIR/debian/kernel-info.mk"
 	# Set KERNEL_NAME to current dir name
 	KERNEL_NAME=$(basename ${START_DIR})
-	# Set SOURCES_PATH to parent kernel dir
-	SOURCES_PATH="dirname ${START_DIR}"
+	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+
 	## Set kernel build output paths
 	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
-	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
 	KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
 	KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
 	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
 	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
 	## Create kernel build output dirs
-  	[ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
-  	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir $KERNEL_BUILD_OUT_DEBS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir $KERNEL_BUILD_OUT_DEBIAN_PATH
-  	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir $KERNEL_BUILD_OUT_LOGS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir $KERNEL_BUILD_OUT_OTHER_PATH
+  	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
+  	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
+  	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
+  	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
+  	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
+
 	## Kernel Info constants
 	KERNEL_BASE_VERSION=$(cat $KERNEL_INFO_MK | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
 	DEVICE_DEFCONFIG_FILE=$(cat $KERNEL_INFO_MK | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
