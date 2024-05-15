@@ -130,6 +130,17 @@ fn_build_env_base_paths_config() {
   	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
 }
 
+fn_docker_global_config() {
+    ## Docker constants
+    DEFAULT_CONTAINER_NAME='droidian-build-env'
+    CONTAINER_NAME="$DEFAULT_CONTAINER_NAME"
+    CONTAINER_COMMITED_NAME='droidian-build-env-custom'
+    IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
+    IMAGE_BASE_TAG='bookworm-amd64'
+    IMAGE_COMMIT_NAME='custom/build-essential'
+    IMAGE_COMMIT_TAG='bookworm-amd64'
+}
+
 fn_kernel_info_mk_check() {
 	## Check for kernel-info.mk
 	[ -f "${KERNEL_INFO_MK}" ] || abort "kernel-info.mk file not found!"
@@ -149,14 +160,7 @@ fn_kernel_info_mk_check() {
 	cpio device-tree-compiler flex 	kmod libfdt1 libkmod2 libpcre3 libpython2-stdlib libpython2.7-minimal libpython2.7-stdlib libssl-dev \
 	libyaml-0-2 linux-initramfs-halium-generic mkbootimg mkdtboimg python2 python2-minimal python2.7 python2.7-minimal"
 #	gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android libgcc-4.9-dev-aarch64-linux-android-cross
-	## Docker constants
-	DEFAULT_CONTAINER_NAME='droidian-build-env'
-	CONTAINER_NAME="$DEFAULT_CONTAINER_NAME"
-	CONTAINER_COMMITED_NAME='droidian-build-env-custom'
-	IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
-	IMAGE_BASE_TAG='bookworm-amd64'
-	IMAGE_COMMIT_NAME='custom/build-essential'
-	IMAGE_COMMIT_TAG='bookworm-amd64'
+
 }
 
 ######################
@@ -249,15 +253,16 @@ fn_setup_build_env() {
 ######################
 fn_create_container() {
 # Creates the container
-	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c $CONTAINER_NAME)
-	if [ "$CONTAINER_EXISTS" -eq "0" ]; then
-		if [ "$IS_COMMIT" == "yes" ]; then
+	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
+	if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
+		if [ "$IS_COMMIT"º == "yes" ]; then
 			IMAGE_NAME="$IMAGE_COMMIT_NAME:$IMAGE_COMMIT_TAG"
 		else
 			IMAGE_NAME="$IMAGE_BASE_NAME"
 		fi
+		echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
 		$SUDO docker -v create --name $CONTAINER_NAME -v $PACKAGES_DIR:/buildd \
-			-v $KERNEL_DIR:/buildd/sources -i -t "$IMAGE_NAME"
+			-v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}"
 		echo && echo "Container created!"
 	else
 		echo && echo "Container already exists!" && exit 4
@@ -265,8 +270,8 @@ fn_create_container() {
 }
 fn_remove_container() {
 # Removes a the container
-	CONTAINER_EXIST=$(docker ps -a | grep -c "$CONTAINER_NAME")
-	CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+	CONTAINER_EXIST=$(${SUDO} docker ps -a | grep -c "$CONTAINER_NAME")
+	CONTAINER_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 	if [ "$CONTAINER_EXIST" -eq '0' ]; then
 		echo && echo "Container $CONTAINER_NAME not exists..."
 		echo
@@ -276,7 +281,7 @@ fn_remove_container() {
 	if [ "$RM_CONT" == "yes" ]; then
 		echo && echo "Removing container..."
 		fn_stop_container
-		docker rm $CONTAINER_ID
+		${SUDO} docker rm $CONTAINER_ID
 	else
 		echo && echo "Container $CONTAINER_NAME will NOT be removed as user choice"
 		echo
@@ -291,17 +296,17 @@ fn_set_container_commit_if_exists() {
 	fi
 }
 fn_start_container() {
-	IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
+	IS_STARTED=$(${SUDO} docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
 	if [ "$IS_STARTED" -eq "0" ]; then
 		$SUDO docker start $CONTAINER_NAME
 	fi
 }
 fn_stop_container() {
-	docker stop $CONTAINER_NAME
+	${SUDO} docker stop $CONTAINER_NAME
 }
 fn_get_default_container_id() {
 	# Search for original container id
-	DEFAULT_CONT_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+	DEFAULT_CONT_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 }
 fn_commit_container() {
 	if [ "$CONTAINER_NAME" == "droidian-build-env-custom" ]; then
@@ -315,9 +320,9 @@ fn_commit_container() {
 	# Commit creation
 	echo && echo "Creating commit \"$IMAGE_COMMIT_NAME\"..."
 	echo "Please be patient!!!"
-	docker commit $DEFAULT_CONT_ID $IMAGE_COMMIT_NAME
+	${SUDO} docker commit $DEFAULT_CONT_ID $IMAGE_COMMIT_NAME
 	echo && echo "Stoping original container..."
-	docker stop $DEFAULT_CONTAINER_NAME
+	${SUDO} docker stop $DEFAULT_CONTAINER_NAME
 	# Set container commit name as current container
 	CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
 	# Create new container from commit image.
@@ -327,10 +332,10 @@ fn_commit_container() {
 	echo
 }
 fn_shell_to_container() {
-	docker exec -it $CONTAINER_NAME bash
+	${SUDO} docker exec -it $CONTAINER_NAME bash
 }
 fn_cmd_on_container() {
-	docker exec -it $CONTAINER_NAME $CMD
+	${SUDO} docker exec -it $CONTAINER_NAME $CMD
 }
 
 ############################
@@ -446,6 +451,7 @@ fn_ip_forward_activa
 fn_configura_sudo
 fn_verificacions_path
 fn_build_env_base_paths_config
+fn_docker_global_config
 fn_action_prompt
 fn_set_container_commit_if_exists
 
