@@ -92,27 +92,17 @@ fn_configura_sudo() {
 	if [ "$USER" != "root" ]; then SUDO='sudo'; fi
 }
 
+abort() {
+	echo; echo "$*"
+	exit 1
+}
+
 fn_verificacions_path() {
-	START_DIR=$(pwd)
-	# Cerca un aerxiu README de linux kernel
-	if [ ! "$START_DIR/README" ]; then
-		echo && echo "README file not found in current dir. Please launch this tool from the kernel sources root dir."
-		echo
-		exit 1
-	else
-		ES_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-		if [ "$ES_KERNEL" -eq '0' ]; then
-			echo && echo "No Linux kernel README file not found in current dir. Please launch this tool from the kernel sources root dir."
-			echo
-			exit 1
-		fi
-	fi
-	## Cerca un arxiu Makefile
-	if [ ! -f "$START_DIR/Makefile" ]; then
-		echo && echo "Makefile not found in current dir. Please launch this tool from the kernel sources root dir."
-		echo
-		exit 1
-	fi
+    START_DIR=$(pwd)
+    # Cerca un aerxiu README de linux kernel
+    [ ! -e "$START_DIR/README" ] && abort "README file not found. Please exec th script from the git kernel dir"
+    IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
+    [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
 }
 
 fn_configura_build_env() {
