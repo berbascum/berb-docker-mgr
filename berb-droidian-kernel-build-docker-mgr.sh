@@ -168,8 +168,8 @@ fn_ip_forward_activa() {
 	FORWARD_ES_ACTIVAT=$(cat /proc/sys/net/ipv4/ip_forward)
 	if [ "$FORWARD_ES_ACTIVAT" -eq "0" ]; then
 		echo "" && echo "Activant ip4_forward..."
-		sysctl -w net.ipv4.ip_forward=1
-		systemctl restart docker
+		${SUDO} sysctl -w net.ipv4.ip_forward=1
+		${SUDO} systemctl restart docker
 	else
 		echo && echo "ip4_forward prèviament activat!"
 	fi
@@ -249,7 +249,7 @@ fn_setup_build_env() {
 ######################
 fn_create_container() {
 # Creates the container
-	CONTAINER_EXISTS=$(docker ps -a | grep -c $CONTAINER_NAME)
+	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c $CONTAINER_NAME)
 	if [ "$CONTAINER_EXISTS" -eq "0" ]; then
 		if [ "$IS_COMMIT" == "yes" ]; then
 			IMAGE_NAME="$IMAGE_COMMIT_NAME:$IMAGE_COMMIT_TAG"
@@ -258,6 +258,7 @@ fn_create_container() {
 		fi
 		$SUDO docker -v create --name $CONTAINER_NAME -v $PACKAGES_DIR:/buildd \
 			-v $KERNEL_DIR:/buildd/sources -i -t "$IMAGE_NAME"
+		echo && echo "Container created!"
 	else
 		echo && echo "Container already exists!" && exit 4
 	fi
@@ -282,7 +283,7 @@ fn_remove_container() {
 	fi
 }
 fn_set_container_commit_if_exists() {
-	COMMIT_EXISTS=$(docker images -a | grep -c "$IMAGE_COMMIT_NAME")
+	COMMIT_EXISTS=$(${SUDO} docker images -a | grep -c "$IMAGE_COMMIT_NAME")
 	if [ "$COMMIT_EXISTS" -eq "1" ]; then
 		echo "" && echo "Setting detected commit as default container..."
 		CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
@@ -420,7 +421,7 @@ fn_create_outputs_backup() {
 
 fn_print_vars() {
     ## Prints kernel paths
-    echo && "Config defined:"
+    echo && echo "Config defined:"
     echo && echo "KERNEL_NAME $KERNEL_NAME"
     echo "KERNEL_BASE_VERSION = $KERNEL_BASE_VERSION"
     echo "KERNEL_DIR = $KERNEL_DIR"
