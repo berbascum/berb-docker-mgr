@@ -2,17 +2,17 @@
 
 
 TOOL_NOM='berb-droidian-kernel-build-docker-mgr'
-TOOL_VERSIO='0.0.3'
+TOOL_VERSIO='1.0.0.3'
 TOOL_BRANCA='testing'
 
 # Not used yet by this script:
 # VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
 
 # Upstream-Name: berb-droidian-kernel-build-docker-mgr
-# Source: https://github.com/berbascum/berb-droidian-kernel-build-docker-mgr
+# Source: https://gitlab.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
   ## Script that manages a custom docker container with Droidian build environment
 
-# Copyright (C) 2022 Berbascum <berbascum@ticv.cat>
+# Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
 
 # BSD 3-Clause License
@@ -47,7 +47,7 @@ TOOL_BRANCA='testing'
     # Add cmd params support
     # Before compiling, script asks for remove out dir?
 
-  # v_0.0.3: name changed from "droidian-manage-docker-container to "berb-droidian-kernel-build-docker-mgr"
+  # v_1.0.0-3: name changed from "droidian-manage-docker-container to "berb-droidian-kernel-build-docker-mgr"
     # New: fn_configura_sudo
     # New: fn_configura_build_env
     # New: Implemented kernel path auto detection
