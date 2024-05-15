@@ -51,7 +51,7 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
     # New: fn_configura_sudo
     # New: fn_configura_build_env
     # New: Implemented kernel path auto detection
-    # New: fn_verificacions_path: Basic check to determine if start dir a kernel source root dir.
+    # New: Basic check to determine if start dir a kernel source root dir.
     # New: fn_create_outputs_backup: After compilation, script archives most output relevant files and archive them to tar.gz
     # New: fn_remove_container
     # Conf: Add net-tools to apt depends
@@ -65,6 +65,7 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
     # Added build-kernel-on-container feature 
       # Before compiling, script asks for remove out dir.
     # Added feature to enable/disable download build deps in kernel-info.mk
+    # Improvements and bug fixes  in commit_container function.
     # Improvements in commit_container function.
     
   # v_0.0.1
@@ -92,14 +93,14 @@ fn_configura_sudo() {
 }
 
 fn_verificacions_path() {
-	DIR_INICIAL=$(pwd)
+	START_DIR=$(pwd)
 	# Cerca un aerxiu README de linux kernel
-	if [ ! "$DIR_INICIAL/README" ]; then
+	if [ ! "$START_DIR/README" ]; then
 		echo && echo "README file not found in current dir. Please launch this tool from the kernel sources root dir."
 		echo
 		exit 1
 	else
-		ES_KERNEL=$(cat $DIR_INICIAL/README | head -n 1 | grep -c "Linux kernel")
+		ES_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
 		if [ "$ES_KERNEL" -eq '0' ]; then
 			echo && echo "No Linux kernel README file not found in current dir. Please launch this tool from the kernel sources root dir."
 			echo
@@ -107,7 +108,7 @@ fn_verificacions_path() {
 		fi
 	fi
 	## Cerca un arxiu Makefile
-	if [ ! -f "$DIR_INICIAL/Makefile" ]; then
+	if [ ! -f "$START_DIR/Makefile" ]; then
 		echo && echo "Makefile not found in current dir. Please launch this tool from the kernel sources root dir."
 		echo
 		exit 1
@@ -116,16 +117,15 @@ fn_verificacions_path() {
 
 fn_configura_build_env() {
 	## get kernel info
-	KERNEL_NOM=$(echo $DIR_INICIAL | awk -F'/' '{print $NF}')
-		cd ..
-	SOURCES_PATH=$(pwd)
-		cd $DIR_INICIAL
-	## kernel paths
-	KERNEL_DIR="$DIR_INICIAL"
+	KERNEL_DIR="${START_DIR}"
 	KERNEL_INFO_MK="$KERNEL_DIR/debian/kernel-info.mk"
+	# Set KERNEL_NAME to current dir name
+	KERNEL_NAME=$(basename ${START_DIR})
+	# Set SOURCES_PATH to parent kernel dir
+	SOURCES_PATH="dirname ${START_DIR}"
 	## Set kernel build output paths
 	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
-	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NOM"
+	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
 	KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
 	KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
 	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
@@ -143,10 +143,10 @@ fn_configura_build_env() {
 	DEVICE_MODEL==$(cat $KERNEL_INFO_MK | grep 'DEVICE_MODEL' | awk -F' = ' '{print $2}')
 	DEVICE_ARCH==$(cat $KERNEL_INFO_MK | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
 	## Backups info
-	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NOM.tar.gz"
+	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 	## Prints kernel paths
 	echo && "Config defined:"
-	echo && echo "KERNEL_NOM $KERNEL_NOM"
+	echo && echo "KERNEL_NAME $KERNEL_NAME"
 	echo "KERNEL_BASE_VERSION = $KERNEL_BASE_VERSION"
 	echo "KERNEL_DIR = $KERNEL_DIR"
 	echo "DEVICE_DEFCONFIG_FILE = $DEVICE_DEFCONFIG_FILE"
@@ -405,7 +405,7 @@ fn_create_outputs_backup() {
 	for i in ${arr_OUT_DIR_FILES[@]}; do
 		cp -a $i $KERNEL_BUILD_OUT_OTHER_PATH
 	done
-	cd $DIR_INICIAL
+	cd $START_DIR
 
 	## Copyng device defconfig file to PACKAGES_DIR..."
 	echo && echo " Copyng $DEVICE_DEFCONFIG_FILE file to $PACKAGES_DIR..."
@@ -429,7 +429,7 @@ fn_create_outputs_backup() {
 	else
 		echo && echo "Backup $BACKUP_FILE_NOM failed!!!"
 	fi
-	cd $DIR_INICIAL
+	cd $START_DIR
 }
 
 ############################
