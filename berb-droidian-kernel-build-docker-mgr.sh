@@ -128,6 +128,20 @@ fn_build_env_base_paths_config() {
   	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
   	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
   	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
+
+	## Backups info
+	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+
+	## Depends  ## To do: Get deps from kernel-info.mk
+	APT_INSTALL_DEPS="net-tools vim locate git bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
+		linux-packaging-snippets"
+		#linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
+		#mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
+		#clang-android-6.0-4691093 clang-android-10.0-r370808
+		#gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
+		#libgcc-4.9-dev-aarch64-linux-android-cross
+		#binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
+		#python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
 }
 
 fn_docker_global_config() {
@@ -151,16 +165,6 @@ fn_kernel_info_mk_check() {
 	DEVICE_VENDOR==$(cat $KERNEL_INFO_MK | grep 'DEVICE_VENDOR' | awk -F' = ' '{print $2}')
 	DEVICE_MODEL==$(cat $KERNEL_INFO_MK | grep 'DEVICE_MODEL' | awk -F' = ' '{print $2}')
 	DEVICE_ARCH==$(cat $KERNEL_INFO_MK | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
-	## Backups info
-	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
-
-	## Depends  ## To do: Get deps from kernel-info.mk
-	APT_INSTALL_DEPS="net-tools vim locate git linux-packaging-snippets linux-initramfs-halium-generic:arm64 binutils-aarch64-linux-gnu \
-	clang-android-6.0-4691093 clang-android-10.0-r370808 android-sdk-ufdt-tests avbtool bc binutils-gcc4.9-aarch64-linux-android bison \
-	cpio device-tree-compiler flex 	kmod libfdt1 libkmod2 libpcre3 libpython2-stdlib libpython2.7-minimal libpython2.7-stdlib libssl-dev \
-	libyaml-0-2 linux-initramfs-halium-generic mkbootimg mkdtboimg python2 python2-minimal python2.7 python2.7-minimal"
-#	gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android libgcc-4.9-dev-aarch64-linux-android-cross
-
 }
 
 ######################
@@ -184,9 +188,9 @@ fn_action_prompt() {
 	echo && echo "Action is required:"
 	echo && echo " 1 - Create container"
 	echo " 2 - Remove container"
-	echo && echo " 3 - Install build env from apt. OPTIONAL"
-	echo && echo " 4 - Start container"
-	echo " 5 - Stop container"
+	echo && echo " 3 - Start container"
+	echo " 4 - Stop container"
+	echo && echo " 5 - Install extra packages from apt."
 	echo && echo " 6 - Commit container:"
         echo "     Commits current container state."
         echo "     Then creates new container from the commit."
@@ -197,7 +201,7 @@ fn_action_prompt() {
 #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
 	echo && echo "10 - Build kernel on container"
 	echo && echo "11 - Backup kernel build output relevant files"
-	echo && read -p "Input an option: " OPTION
+	echo && read -p "Select an option: " OPTION
 	case $OPTION in
 		1)
 			ACTION="create"
@@ -206,13 +210,13 @@ fn_action_prompt() {
 			ACTION="remove"
 			;;
 		3)
-			ACTION="install-apt-deps"
-			;;
-		4)
 			ACTION="start"
 			;;
-		5)
+		4)
 			ACTION="stop"
+			;;
+		5)
+			ACTION="install-apt-deps"
 			;;
 		6)
 			ACTION="commit-container"
@@ -241,8 +245,8 @@ fn_action_prompt() {
 fn_install_apt_deps() {
 	APT_UPDATE="apt-get update"
         APT_INSTALL="apt-get install $APT_INSTALL_DEPS -y"
-	export CMD="$APT_UPDATE" && fn_cmd_on_container
-	export CMD="$APT_INSTALL" && fn_cmd_on_container
+	CMD="$APT_UPDATE" && fn_cmd_on_container
+	CMD="$APT_INSTALL" && fn_cmd_on_container
 }
 fn_setup_build_env() {
 	echo && echo "To do."
