@@ -97,6 +97,15 @@ abort() {
 	exit 1
 }
 
+missatge() {
+    echo; echo "$*"
+}
+
+missatge_return() {
+    echo; echo "$*"
+    return 0
+}
+
 fn_verificacions_path() {
     START_DIR=$(pwd)
     # Cerca un aerxiu README de linux kernel
@@ -110,7 +119,6 @@ fn_build_env_base_paths_config() {
 	SOURCES_PATH="$(dirname ${START_DIR})"
 	## get kernel info
 	KERNEL_DIR="${START_DIR}"
-	KERNEL_INFO_MK="$KERNEL_DIR/debian/kernel-info.mk"
 	# Set KERNEL_NAME to current dir name
 	KERNEL_NAME=$(basename ${START_DIR})
 	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
@@ -132,16 +140,7 @@ fn_build_env_base_paths_config() {
 	## Backups info
 	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 
-	## Depends  ## To do: Get deps from kernel-info.mk
-	APT_INSTALL_DEPS="net-tools vim locate git bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
-		linux-packaging-snippets"
-		#linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
-		#mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
-		#clang-android-6.0-4691093 clang-android-10.0-r370808
-		#gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
-		#libgcc-4.9-dev-aarch64-linux-android-cross
-		#binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
-		#python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
+	
 }
 
 fn_docker_global_config() {
@@ -155,17 +154,31 @@ fn_docker_global_config() {
     IMAGE_COMMIT_TAG='bookworm-amd64'
 }
 
-fn_kernel_info_mk_check() {
-	## Check for kernel-info.mk
-	[ -f "${KERNEL_INFO_MK}" ] || abort "kernel-info.mk file not found!"
 
-	## Kernel Info constants
-	KERNEL_BASE_VERSION=$(cat $KERNEL_INFO_MK | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
-	DEVICE_DEFCONFIG_FILE=$(cat $KERNEL_INFO_MK | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
-	DEVICE_VENDOR==$(cat $KERNEL_INFO_MK | grep 'DEVICE_VENDOR' | awk -F' = ' '{print $2}')
-	DEVICE_MODEL==$(cat $KERNEL_INFO_MK | grep 'DEVICE_MODEL' | awk -F' = ' '{print $2}')
-	DEVICE_ARCH==$(cat $KERNEL_INFO_MK | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
+
+fn_install_apt_extra() {
+    APT_INSTALL_EXTRA="net-tools vim locate git bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
+    #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
+    #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
+    #clang-android-6.0-4691093 clang-android-10.0-r370808
+    #gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
+    #libgcc-4.9-dev-aarch64-linux-android-cross
+    #binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
+    #python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
+
+    fn_install_apt ${APT_INSTALL_EXTRA}
 }
+
+fn_install_apt() {
+    packages="$1"
+    APT_UPDATE="apt-get update"
+    APT_UPGRADE="apt-get upgrade -y"
+    APT_INSTALL="apt-get install -y ${packages}"
+    CMD="$APT_UPDATE" && fn_cmd_on_container
+    CMD="$APT_UPGRADE" && fn_cmd_on_container
+    CMD="$APT_INSTALL" && fn_cmd_on_container
+}
+
 
 ######################
 ## Config functions ##
@@ -216,7 +229,7 @@ fn_action_prompt() {
 			ACTION="stop"
 			;;
 		5)
-			ACTION="install-apt-deps"
+			ACTION="install-apt-extra"
 			;;
 		6)
 			ACTION="commit-container"
@@ -242,12 +255,8 @@ fn_action_prompt() {
 	esac
 }
 
-fn_install_apt_deps() {
-	APT_UPDATE="apt-get update"
-        APT_INSTALL="apt-get install $APT_INSTALL_DEPS -y"
-	CMD="$APT_UPDATE" && fn_cmd_on_container
-	CMD="$APT_INSTALL" && fn_cmd_on_container
-}
+
+
 fn_setup_build_env() {
 	echo && echo "To do."
 }
@@ -336,19 +345,103 @@ fn_commit_container() {
 	echo
 }
 fn_shell_to_container() {
-	${SUDO} docker exec -it $CONTAINER_NAME bash
+    ${SUDO} docker exec -it $CONTAINER_NAME bash
 }
 fn_cmd_on_container() {
-	${SUDO} docker exec -it $CONTAINER_NAME $CMD
+    ${SUDO} docker exec -it ${CONTAINER_NAME} ${CMD}
+}
+fn_cp_to_container() {
+    ${SUDO} docker cp ${copy_src} ${CONTAINER_NAME}:${copy_dst}
+}
+fn_cp_from_container() {
+    ${SUDO} docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
 }
 
 ############################
 ## Kernel build functions ##
 ############################
-fn_build_kernel_on_container() {
-## Revisar on cal cridar-la:
-fn_kernel_info_mk_check
+fn_kernel_config_droidian() {
+    ## Check and install required packages
+    arr_pack_reqs=( "linux-packaging-snippets" )
+    fn_install_apt "${arr_pack_reqs[@]}"
 
+    ## Config debian packaging
+    KERNEL_INFO_MK_FILENAME="kernel-info.mk"
+    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
+    ## Create packaging dirs if not exist
+    arr_pack_dirs=( "debian" "debian/source" "initramfs-overlay/scripts" )
+    arr_dir_exist=()
+    for pack_dir in ${arr_pack_dirs[@]}; do
+	[ -d "${pack_dir}" ] && arr_dir_exist+=( "${pack_dir}" ) || mkdir -p -v "${pack_dir}"
+    done
+
+    ## Load kernel config vars if the packaging dirs previously exist
+    if [ "${#arr_dir_exist[@]}" -eq "${#arr_pack_dirs[@]}" ]; then
+	missatge "Debian packaging dirs previously found!"
+
+    elif [ "${#arr_dir_exist[@]}" -eq "0" ]; then
+        missatge "New debian packaging dir tree created. Configuring it..."
+        ## Create kernel-info.mk from template
+        src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
+        dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
+        CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
+        fn_cmd_on_container
+	## Set current user as owner since the file is created inside the container as root
+        ${SUDO} chown ${USER}: ${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}
+        ## Check if the kernel snippet was created
+        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE} file!"
+	
+        ## Create compat file
+        echo "13" > ${KERNEL_DIR}/debian/compat
+        ## Create format file
+        echo "3.0 (native)" > ${KERNEL_DIR}/debian/source/format
+	## Create rules file
+        echo '#!/usr/bin/make -f' > debian/rules
+        echo "include /usr/share/linux-packaging-snippets/kernel-snippet.mk" >> debian/rules
+        echo '%:' >> debian/rules
+        echo 'dh \$@' >> debian/rules
+        chmod +x ${KERNEL_DIR}/debian/rules
+	## Create halium-hooks file
+	echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
+		> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "halium_hook_setup_touchscreen() {" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "        echo 1 > /sys/class/leds/:kbd_backlight/brightness" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "}" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "halium_hook_teardown_touchscreen() {" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "        echo 0 > /sys/class/leds/:kbd_backlight/brightness" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	echo "}" \
+		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+	chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+
+    elif [ "${#arr_dir_exist[@]}" -ne "0" ]; then
+    ## Exit function if the the packaging dirs are found
+	abort "Some packaging dirs, but not all, was previously created!"
+    fi
+    arr_dir_exist=()
+
+    ## Set Kernel Info constants
+    KERNEL_BASE_VERSION=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
+    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
+    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk -F'=' '{print $2}')
+    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk -F'=' '{print $2}')
+    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk -F'=' '{print $2}')
+}
+
+fn_build_kernel_on_container() {
+    ## Call droidian kernel configuration function
+    fn_kernel_config_droidian
+
+    fn_print_vars
+    echo
+
+    exit
 
 	[ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
 	# Script creation to launch compilation inside the container.
@@ -366,7 +459,7 @@ fn_kernel_info_mk_check
 	echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
 	echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
 	echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
+	${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
 	# ask for disable install build deps in debian/kernel.mk if enabled.
 	#INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
 	#if [ "$INSTALL_DEPS_IS_ENABLED" -eq "1" ]; then
@@ -378,7 +471,7 @@ fn_kernel_info_mk_check
 	#	esac
 	#fi
 	# Build execution command inide container
-	docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
+	${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
 	echo  && echo "Compilation finished."
 # fn_create_outputs_backup
 }
@@ -477,8 +570,8 @@ elif [ "$ACTION" == "shell-to" ]; then
 #	fn_cmd_on_container
 #elif [ "$ACTION" == "setup-build-env" ]; then
 #	fn_build_env_base_paths_config
-elif [ "$ACTION" == "install-apt-deps" ]; then
-	fn_install_apt_deps
+elif [ "$ACTION" == "install-apt-extra" ]; then
+	fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
 	fn_commit_container
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
