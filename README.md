@@ -1,2 +1,2 @@
 # berbian-build-docker-mgr
-Bash script to manage docker containers with different build environments.
+Tool that configures and manages the docker  build env and the kernel sources for compiling an halium  kernel using the official Droidian build tools.

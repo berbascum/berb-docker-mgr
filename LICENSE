@@ -1,8 +1,15 @@
-BSD 3-Clause License
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: berb-droidian-kernel-build-docker-mgr
+Source: https://gitlab.com/berbascum/berb-droidian-kernel-build-docker-mgr
+Source: https://git.ticv.cat/berbascum/berb-droidian-kernel-build-docker-mgr
 
-Copyright (c) 2022, berbascum
+Files: *
+Copyright (c) 2024, berbascum <berbascum@ticv.cat>
 All rights reserved.
+License: BSD-3-clause
 
+
+BSD 3-Clause License
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
