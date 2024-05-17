@@ -370,65 +370,66 @@ fn_kernel_config_droidian() {
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
     ## Create packaging dirs if not exist
     arr_pack_dirs=( "debian" "debian/source" "initramfs-overlay/scripts" )
-    arr_dir_exist=()
+    #arr_dir_exist=()
     for pack_dir in ${arr_pack_dirs[@]}; do
-	[ -d "${pack_dir}" ] && arr_dir_exist+=( "${pack_dir}" ) || mkdir -p -v "${pack_dir}"
+	#[ -d "${pack_dir}" ] && arr_dir_exist+=( "${pack_dir}" ) || mkdir -p -v "${pack_dir}"
+	[ -d "${pack_dir}" ] || mkdir -p -v "${pack_dir}"
     done
 
-    ## Load kernel config vars if the packaging dirs previously exist
-    if [ "${#arr_dir_exist[@]}" -eq "${#arr_pack_dirs[@]}" ]; then
-	missatge "Debian packaging dirs previously found!"
-
-    elif [ "${#arr_dir_exist[@]}" -eq "0" ]; then
-        missatge "New debian packaging dir tree created. Configuring it..."
-        ## Create kernel-info.mk from template
-        src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
-        dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
-        CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
-        fn_cmd_on_container
-	## Set current user as owner since the file is created inside the container as root
+    ## Create kernel-info.mk from template
+    if [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ]; then
+    	src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
+    	dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
+    	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
+    	fn_cmd_on_container
+        ## Set current user as owner since the file is created inside the container as root
         ${SUDO} chown ${USER}: ${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}
         ## Check if the kernel snippet was created
-        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE} file!"
+        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
+    fi
 	
+    if [ ! -f "${KERNEL_DIR}/debian/compat" ]; then
         ## Create compat file
         echo "13" > ${KERNEL_DIR}/debian/compat
+    fi
+    if [ ! -f "${KERNEL_DIR}/debian/source/format" ]; then
         ## Create format file
         echo "3.0 (native)" > ${KERNEL_DIR}/debian/source/format
-	## Create rules file
-        echo '#!/usr/bin/make -f' > debian/rules
-        echo "include /usr/share/linux-packaging-snippets/kernel-snippet.mk" >> debian/rules
-        echo '%:' >> debian/rules
-        echo 'dh \$@' >> debian/rules
-        chmod +x ${KERNEL_DIR}/debian/rules
-	## Create halium-hooks file
-	echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
-		> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "halium_hook_setup_touchscreen() {" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "        echo 1 > /sys/class/leds/:kbd_backlight/brightness" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "}" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "halium_hook_teardown_touchscreen() {" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "        echo 0 > /sys/class/leds/:kbd_backlight/brightness" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	echo "}" \
-		>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-	chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-
-    elif [ "${#arr_dir_exist[@]}" -ne "0" ]; then
-    ## Exit function if the the packaging dirs are found
-	abort "Some packaging dirs, but not all, was previously created!"
     fi
-    arr_dir_exist=()
+    if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
+        ## Create rules file
+        echo '#!/usr/bin/make -f' > ${KERNEL_DIR}/debian/rules
+        echo '' >> ${KERNEL_DIR}/debian/rules
+        echo "include /usr/share/linux-packaging-snippets/kernel-snippet.mk" >> ${KERNEL_DIR}/debian/rules
+        echo '%:' >> ${KERNEL_DIR}/debian/rules
+        echo '' >> ${KERNEL_DIR}/debian/rules
+        echo '	dh \$@' >> ${KERNEL_DIR}/debian/rules
+        chmod +x ${KERNEL_DIR}/debian/rules
+    fi
+    if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
+        ## Create halium-hooks file
+        echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
+	    > ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "halium_hook_setup_touchscreen() {" \
+	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "        echo 1 > /sys/class/leds/:kbd_backlight/brightness" \
+ 	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "}" \
+	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "" \
+ 	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "halium_hook_teardown_touchscreen() {" \
+	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "        echo 0 > /sys/class/leds/:kbd_backlight/brightness" \
+	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        echo "}" \
+	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+    fi
 
     ## Set Kernel Info constants
     KERNEL_BASE_VERSION=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
-    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
+    EVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
     DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk -F'=' '{print $2}')
     DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk -F'=' '{print $2}')
     DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk -F'=' '{print $2}')
@@ -439,21 +440,18 @@ fn_build_kernel_on_container() {
     fn_kernel_config_droidian
 
     fn_print_vars
-    echo
-
-    exit
 
 	[ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
 	# Script creation to launch compilation inside the container.
 	echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export PATH=/proton-clang-11/bin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export OBJDUMP=llvm-objdump" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export OBJDUMP=llvm-objdump" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
+	#echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
 	echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-droidian-kernel.sh
 	echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
 	echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
