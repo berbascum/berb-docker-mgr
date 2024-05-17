@@ -363,7 +363,9 @@ fn_cp_from_container() {
 fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
-    fn_install_apt "${arr_pack_reqs[@]}"
+
+    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
+  
 
     ## Config debian packaging
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
@@ -429,49 +431,58 @@ fn_kernel_config_droidian() {
 
     ## Set Kernel Info constants
     KERNEL_BASE_VERSION=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
-    EVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
-    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk -F'=' '{print $2}')
-    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk -F'=' '{print $2}')
-    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk -F'=' '{print $2}')
+    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
+    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk '{print $3}')
+    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk '{print $3}')
+    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk '{print $3}')
+    read -p "Pausa abans sed if device vayu"
+
+    fn_print_vars
+
+    ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
+    if [ "$DEVICE_MODEL" == "vayu" ]; then
+	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build eror on some devices"
+	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
+	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
+	fn_cmd_on_container
+    fi
 }
 
 fn_build_kernel_on_container() {
     ## Call droidian kernel configuration function
     fn_kernel_config_droidian
 
-    fn_print_vars
+    [ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
+    # Script creation to launch compilation inside the container.
+    echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
+    echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export OBJDUMP=llvm-objdump" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
+    # ask for disable install build deps in debian/kernel.mk if enabled.
+    #INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
+    #if [ "$INSTALL_DEPS_IS_ENABLED" -eq "1" ]; then
+    #	echo "" && read -p "Want you disable install build deps? Say \"n\" if not sure! y/n:  " OPTION
+    #	case $OPTION in
+    #		y)
+    #			fn_disable_install_deps_on_build
+    #			;;
+    #	esac
+    #fi
+    ${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
+    echo  && echo "Compilation finished."
 
-	[ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
-	# Script creation to launch compilation inside the container.
-	echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
-	echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export OBJDUMP=llvm-objdump" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	#echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
-	${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
-	# ask for disable install build deps in debian/kernel.mk if enabled.
-	#INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
-	#if [ "$INSTALL_DEPS_IS_ENABLED" -eq "1" ]; then
-	#	echo "" && read -p "Want you disable install build deps? Say \"n\" if not sure! y/n:  " OPTION
-	#	case $OPTION in
-	#		y)
-	#			fn_disable_install_deps_on_build
-	#			;;
-	#	esac
-	#fi
-	# Build execution command inide container
-	${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
-	echo  && echo "Compilation finished."
-# fn_create_outputs_backup
+    # fn_create_outputs_backup
 }
 
 fn_create_outputs_backup() {
@@ -550,7 +561,7 @@ fn_docker_global_config
 fn_action_prompt
 fn_set_container_commit_if_exists
 
-fn_print_vars
+#fn_print_vars
 echo
 
 ## Execute action on container name
