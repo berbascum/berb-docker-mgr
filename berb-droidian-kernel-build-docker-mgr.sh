@@ -118,10 +118,10 @@ fn_build_env_base_paths_config() {
 	# Set SOURCES_PATH to parent kernel dir
 	SOURCES_PATH="$(dirname ${START_DIR})"
 	## get kernel info
-	KERNEL_DIR="${START_DIR}"
+	export KERNEL_DIR="${START_DIR}"
 	# Set KERNEL_NAME to current dir name
 	KERNEL_NAME=$(basename ${START_DIR})
-	PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+	export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
 
 	## Set kernel build output paths
 	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
@@ -130,7 +130,7 @@ fn_build_env_base_paths_config() {
 	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
 	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
 	## Create kernel build output dirs
-  	[ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
+  	# [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
   	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
   	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
   	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
@@ -139,8 +139,6 @@ fn_build_env_base_paths_config() {
 
 	## Backups info
 	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
-
-	
 }
 
 fn_docker_global_config() {
@@ -166,14 +164,14 @@ fn_install_apt_extra() {
     #binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
     #python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
 
-    fn_install_apt ${APT_INSTALL_EXTRA}
+    fn_install_apt "${APT_INSTALL_EXTRA}"
 }
 
 fn_install_apt() {
     packages="$1"
     APT_UPDATE="apt-get update"
     APT_UPGRADE="apt-get upgrade -y"
-    APT_INSTALL="apt-get install -y ${packages}"
+    APT_INSTALL="apt-get install -y "${packages}""
     CMD="$APT_UPDATE" && fn_cmd_on_container
     CMD="$APT_UPGRADE" && fn_cmd_on_container
     CMD="$APT_INSTALL" && fn_cmd_on_container
@@ -364,8 +362,15 @@ fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
-    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
-  
+    # Temporary disabled 2024-05-17 ## 
+    #fn_install_apt "${arr_pack_reqs[@]}"
+    arr_kernel_version=()
+    arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
+    for version_str in ${arr_kernel_version_str[@]}; do
+	arr_kernel_version+=( $(cat ${KERNEL_DIR}/Makefile | grep ${version_str} | head -n 1 | awk '{print $3}') )
+    done
+    KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
+    KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
 
     ## Config debian packaging
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
@@ -384,22 +389,41 @@ fn_kernel_config_droidian() {
     	dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
     	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
     	fn_cmd_on_container
-        ## Set current user as owner since the file is created inside the container as root
-        ${SUDO} chown ${USER}: ${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}
         ## Check if the kernel snippet was created
         [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
+
+	## Configuring the kernel version on kernel-info.mk
+	echo; echo "Configuring the kernel version on kernel-info.mk..."
+	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+	replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+	sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" \
+		${KERNEL_INFO_MK_FULLPATH_FILE}
+
+	## Miniml kernel-info.mk config
+	echo; read -p "Enter a device vendor name: " answer
+	sed -i "s/DEVICE_VENDOR.*/DEVICE_VENDOR\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+	echo; read -p "Enter a device model name: " answer
+	sed -i "s/DEVICE_MODEL.*/DEVICE_MODEL\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+	echo; read -p "Enter the full device name: " answer
+	sed -i "s/DEVICE_FULL_NAME.*/DEVICE_FULL_NAME\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+	echo; read -p "Enter the cmdline: " answer
+	sed -i "s/KERNEL_BOOTIMAGE_CMDLINE.*/KERNEL_BOOTIMAGE_CMDLINE\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+	echo; read -p "Enter the defconf file name: " answer
+	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
-	
+    kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
+    [ -n "${kernel_info_mk_is_configured}" ] && abort "kernel-info.mk is unconfigured!"
+
+    ## Create compat file
     if [ ! -f "${KERNEL_DIR}/debian/compat" ]; then
-        ## Create compat file
         echo "13" > ${KERNEL_DIR}/debian/compat
     fi
+    ## Create format file
     if [ ! -f "${KERNEL_DIR}/debian/source/format" ]; then
-        ## Create format file
         echo "3.0 (native)" > ${KERNEL_DIR}/debian/source/format
     fi
+    ## Create rules file
     if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
-        ## Create rules file
         echo '#!/usr/bin/make -f' > ${KERNEL_DIR}/debian/rules
         echo '' >> ${KERNEL_DIR}/debian/rules
         echo "include /usr/share/linux-packaging-snippets/kernel-snippet.mk" >> ${KERNEL_DIR}/debian/rules
@@ -408,8 +432,8 @@ fn_kernel_config_droidian() {
         echo '	dh \$@' >> ${KERNEL_DIR}/debian/rules
         chmod +x ${KERNEL_DIR}/debian/rules
     fi
+    ## Create halium-hooks file
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
-        ## Create halium-hooks file
         echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
 	    > ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
         echo "halium_hook_setup_touchscreen() {" \
@@ -430,14 +454,33 @@ fn_kernel_config_droidian() {
     fi
 
     ## Set Kernel Info constants
-    KERNEL_BASE_VERSION=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_BASE_VERSION' | awk -F' = ' '{print $2}')
     DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
     DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk '{print $3}')
     DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk '{print $3}')
     DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk '{print $3}')
-    read -p "Pausa abans sed if device vayu"
 
+    ## Sow vars defined
     fn_print_vars
+
+    ## Add defconf fragments
+    DEFCONF_FRAGS_DIR="droidian"
+    DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
+    [ -d "${DEFCONF_COMM_FRAGS_DIR}" ] || mkdir -v -p "${DEFCONF_COMM_FRAGS_DIR}"
+    
+    echo; echo "Checking for defconfig common fragments..."
+    DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android/"
+    arr_frag_files=( "debug.config" "droidian.config" "halium.config" )
+    for frag_file in ${arr_frag_files[@]}; do
+	## Get the file if not exist
+	[ -f "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" ] \
+	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" "${DEFCONF_COMM_FRAGS_URL}${frag_file}" 2>&1  >/dev/null
+   done
+
+    echo; echo "Checking for device defconfig fragment..."
+    DEFCONF_DEV_FRAG_URL="https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/droidian/pro1x.config"
+    ## Get the file if not exist
+    [ -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
+       || wget -O "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" "${DEFCONF_DEV_FRAG_URL}"
 
     ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
     if [ "$DEVICE_MODEL" == "vayu" ]; then
@@ -535,6 +578,7 @@ fn_print_vars() {
     echo && echo "Config defined:"
     echo && echo "KERNEL_NAME $KERNEL_NAME"
     echo "KERNEL_BASE_VERSION = $KERNEL_BASE_VERSION"
+    echo "KERNEL_BASE_VERSION_SHORT = $KERNEL_BASE_VERSION_SHORT"
     echo "KERNEL_DIR = $KERNEL_DIR"
     echo "DEVICE_DEFCONFIG_FILE = $DEVICE_DEFCONFIG_FILE"
     echo "KERNEL_BUILD_OUT_KOBJ_PATH =$KERNEL_BUILD_OUT_KOBJ_PATH"
