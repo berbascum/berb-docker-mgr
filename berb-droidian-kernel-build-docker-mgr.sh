@@ -114,70 +114,6 @@ fn_verificacions_path() {
     [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
 }
 
-fn_build_env_base_paths_config() {
-	# Set SOURCES_PATH to parent kernel dir
-	SOURCES_PATH="$(dirname ${START_DIR})"
-	## get kernel info
-	export KERNEL_DIR="${START_DIR}"
-	# Set KERNEL_NAME to current dir name
-	KERNEL_NAME=$(basename ${START_DIR})
-	export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
-
-	## Set kernel build output paths
-	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
-	KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
-	KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
-	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
-	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
-	## Create kernel build output dirs
-  	# [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
-  	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
-  	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
-  	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
-
-	## Backups info
-	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
-}
-
-fn_docker_global_config() {
-    ## Docker constants
-    DEFAULT_CONTAINER_NAME='droidian-build-env'
-    CONTAINER_NAME="$DEFAULT_CONTAINER_NAME"
-    CONTAINER_COMMITED_NAME='droidian-build-env-custom'
-    IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
-    IMAGE_BASE_TAG='bookworm-amd64'
-    IMAGE_COMMIT_NAME='custom/build-essential'
-    IMAGE_COMMIT_TAG='bookworm-amd64'
-}
-
-
-
-fn_install_apt_extra() {
-    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps"
-   # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
-    #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
-    #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
-    #clang-android-6.0-4691093 clang-android-10.0-r370808
-    #gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
-    #libgcc-4.9-dev-aarch64-linux-android-cross
-    #binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
-    #python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
-
-    fn_install_apt "${APT_INSTALL_EXTRA}"
-}
-
-fn_install_apt() {
-    packages="$1"
-    APT_UPDATE="apt-get update"
-    APT_UPGRADE="apt-get upgrade -y"
-    APT_INSTALL="apt-get install -y "${packages}""
-    CMD="$APT_UPDATE" && fn_cmd_on_container
-    CMD="$APT_UPGRADE" && fn_cmd_on_container
-    CMD="$APT_INSTALL" && fn_cmd_on_container
-}
-
 
 ######################
 ## Config functions ##
@@ -195,78 +131,21 @@ fn_ip_forward_activa() {
 	fi
 
 }
-fn_action_prompt() {
-## Function to get a action
-	echo && echo "Action is required:"
-	echo && echo " 1 - Create container"
-	echo " 2 - Remove container"
-	echo && echo " 3 - Start container"
-	echo " 4 - Stop container"
-	echo && echo " 5 - Commit container"
-        echo "     Commits current container state."
-        echo "     Then creates new container from the commit."
-        echo "     Script permanent sets new container as default."
-	echo "     ## Actually only support 1 existing commit at same time!"
-	#echo && echo " 6 - Install extra packages from apt."
-	echo && echo " 7 - Shell to container"
-#	echo " 8 - Command to container" # only internal use
-#	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
-	echo && echo "10 - Build kernel on container"
-	echo && echo "11 - Configure a Droidian kernel (android kernel)"
-	echo && echo "12 - Backup kernel build output relevant files"
-	echo && read -p "Select an option: " OPTION
-	case $OPTION in
-		1)
-			ACTION="create"
-			;;
-		2)
-			ACTION="remove"
-			;;
-		3)
-			ACTION="start"
-			;;
-		4)
-			ACTION="stop"
-			;;
-		5)
-			ACTION="commit-container"
-			;;
-#		5)
-#			ACTION="install-apt-extra"
-#			;;
-		7)
-			ACTION="shell-to"
-			;;
-#		8)
-#			ACTION="command-to"
-#			;;
-#		9)
-#			ACTION="setup-build-env"
-#			;;
-		10)
-			ACTION="build-kernel-on-container"
-			;;
-		11)
-			ACTION="config-droidian-kernel"
-			;;
-		12)
-			ACTION="create-outputs-backup"
-			;;
-		*)
-			echo "" && echo "Option not implemented!" && exit 1
-			;;
-	esac
-}
-
-
-
-fn_setup_build_env() {
-	echo && echo "To do."
-}
 
 ######################
 ## Docker functions ##
 ######################
+fn_docker_global_config() {
+    ## Docker constants
+    DEFAULT_CONTAINER_NAME='droidian-build-env'
+    CONTAINER_NAME="$DEFAULT_CONTAINER_NAME"
+    CONTAINER_COMMITED_NAME='droidian-build-env-custom'
+    IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
+    IMAGE_BASE_TAG='bookworm-amd64'
+    IMAGE_COMMIT_NAME='custom/build-essential'
+    IMAGE_COMMIT_TAG='bookworm-amd64'
+}
+
 fn_create_container() {
 # Creates the container
 	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
@@ -360,9 +239,64 @@ fn_cp_from_container() {
     ${SUDO} docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
 }
 
+fn_install_apt() {
+    packages="$1"
+    APT_UPDATE="apt-get update"
+    APT_UPGRADE="apt-get upgrade -y"
+    APT_INSTALL="apt-get install -y "${packages}""
+    CMD="$APT_UPDATE" && fn_cmd_on_container
+    CMD="$APT_UPGRADE" && fn_cmd_on_container
+    CMD="$APT_INSTALL" && fn_cmd_on_container
+}
+
+
 ############################
 ## Kernel build functions ##
 ############################
+fn_setup_build_env() {
+	echo && echo "To do."
+}
+fn_build_env_base_paths_config() {
+	# Set SOURCES_PATH to parent kernel dir
+	SOURCES_PATH="$(dirname ${START_DIR})"
+	## get kernel info
+	export KERNEL_DIR="${START_DIR}"
+	# Set KERNEL_NAME to current dir name
+	KERNEL_NAME=$(basename ${START_DIR})
+	export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+
+	## Set kernel build output paths
+	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
+	KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
+	KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
+	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
+	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
+	## Create kernel build output dirs
+  	# [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
+  	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
+  	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
+  	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
+  	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
+  	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
+
+	## Backups info
+	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+}
+
+fn_install_apt_extra() {
+    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps"
+   # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
+    #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
+    #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
+    #clang-android-6.0-4691093 clang-android-10.0-r370808
+    #gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
+    #libgcc-4.9-dev-aarch64-linux-android-cross
+    #binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
+    #python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
+
+    fn_install_apt "${APT_INSTALL_EXTRA}"
+}
+
 fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
@@ -600,6 +534,69 @@ fn_print_vars() {
     echo "DEVICE_ARCH = $DEVICE_ARCH"
     read -p "Continue..."
 } 
+
+fn_action_prompt() {
+## Function to get a action
+	echo && echo "Action is required:"
+	echo && echo " 1 - Create container"
+	echo " 2 - Remove container"
+	echo && echo " 3 - Start container"
+	echo " 4 - Stop container"
+	echo && echo " 5 - Commit container"
+        echo "     Commits current container state."
+        echo "     Then creates new container from the commit."
+        echo "     Script permanent sets new container as default."
+	echo "     ## Actually only support 1 existing commit at same time!"
+	#echo && echo " 6 - Install extra packages from apt."
+	echo && echo " 7 - Shell to container"
+#	echo " 8 - Command to container" # only internal use
+#	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
+	echo && echo "10 - Build kernel on container"
+	echo && echo "11 - Configure a Droidian kernel (android kernel)"
+	echo && echo "12 - Backup kernel build output relevant files"
+	echo && read -p "Select an option: " OPTION
+	case $OPTION in
+		1)
+			ACTION="create"
+			;;
+		2)
+			ACTION="remove"
+			;;
+		3)
+			ACTION="start"
+			;;
+		4)
+			ACTION="stop"
+			;;
+		5)
+			ACTION="commit-container"
+			;;
+#		5)
+#			ACTION="install-apt-extra"
+#			;;
+		7)
+			ACTION="shell-to"
+			;;
+#		8)
+#			ACTION="command-to"
+#			;;
+#		9)
+#			ACTION="setup-build-env"
+#			;;
+		10)
+			ACTION="build-kernel-on-container"
+			;;
+		11)
+			ACTION="config-droidian-kernel"
+			;;
+		12)
+			ACTION="create-outputs-backup"
+			;;
+		*)
+			echo "" && echo "Option not implemented!" && exit 1
+			;;
+	esac
+}
 
 ############################
 ## Start script execution ##
