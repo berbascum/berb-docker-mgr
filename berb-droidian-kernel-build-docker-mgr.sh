@@ -155,7 +155,7 @@ fn_docker_global_config() {
 
 
 fn_install_apt_extra() {
-    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, binutils-arm-linux-gnueabi, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross"
+    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps"
    # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
     #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
     #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
@@ -202,17 +202,18 @@ fn_action_prompt() {
 	echo " 2 - Remove container"
 	echo && echo " 3 - Start container"
 	echo " 4 - Stop container"
-	echo && echo " 5 - Install extra packages from apt."
-	echo && echo " 6 - Commit container:"
+	echo && echo " 5 - Commit container"
         echo "     Commits current container state."
         echo "     Then creates new container from the commit."
         echo "     Script permanent sets new container as default."
 	echo "     ## Actually only support 1 existing commit at same time!"
+	#echo && echo " 6 - Install extra packages from apt."
 	echo && echo " 7 - Shell to container"
 #	echo " 8 - Command to container" # only internal use
 #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
 	echo && echo "10 - Build kernel on container"
-	echo && echo "11 - Backup kernel build output relevant files"
+	echo && echo "11 - Configure a Droidian kernel (android kernel)"
+	echo && echo "12 - Backup kernel build output relevant files"
 	echo && read -p "Select an option: " OPTION
 	case $OPTION in
 		1)
@@ -228,11 +229,11 @@ fn_action_prompt() {
 			ACTION="stop"
 			;;
 		5)
-			ACTION="install-apt-extra"
-			;;
-		6)
 			ACTION="commit-container"
 			;;
+#		5)
+#			ACTION="install-apt-extra"
+#			;;
 		7)
 			ACTION="shell-to"
 			;;
@@ -246,6 +247,9 @@ fn_action_prompt() {
 			ACTION="build-kernel-on-container"
 			;;
 		11)
+			ACTION="config-droidian-kernel"
+			;;
+		12)
 			ACTION="create-outputs-backup"
 			;;
 		*)
@@ -365,6 +369,7 @@ fn_kernel_config_droidian() {
 
     # Temporary disabled 2024-05-17 ## 
     fn_install_apt "${arr_pack_reqs[@]}"
+
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
     for version_str in ${arr_kernel_version_str[@]}; do
@@ -461,9 +466,6 @@ fn_kernel_config_droidian() {
     DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk '{print $3}')
     DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk '{print $3}')
 
-    ## Sow vars defined
-    fn_print_vars
-
     ## Add defconf fragments
     DEFCONF_FRAGS_DIR="droidian"
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
@@ -484,6 +486,8 @@ fn_kernel_config_droidian() {
     [ -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
        || wget -O "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" "${DEFCONF_DEV_FRAG_URL}"
 
+
+
     ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
     if [ "$DEVICE_MODEL" == "vayu" ]; then
 	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build eror on some devices"
@@ -491,6 +495,12 @@ fn_kernel_config_droidian() {
 	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
 	# fn_cmd_on_container
     fi
+
+    ## Sow vars defined
+    fn_print_vars
+
+    ## Install extra packages
+    #fn_install_apt_extra
 }
 
 fn_build_kernel_on_container() {
@@ -512,6 +522,9 @@ fn_build_kernel_on_container() {
     echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo 'exit' >> $KERNEL_DIR/compile-droidian-kernel.sh
+
     echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
     # ask for disable install build deps in debian/kernel.mk if enabled.
@@ -625,8 +638,10 @@ elif [ "$ACTION" == "shell-to" ]; then
 #	fn_cmd_on_container
 #elif [ "$ACTION" == "setup-build-env" ]; then
 #	fn_build_env_base_paths_config
-elif [ "$ACTION" == "install-apt-extra" ]; then
-	fn_install_apt_extra
+elif [ "$ACTION" == "config-droidian-kernel" ]; then
+	fn_kernel_config_droidian
+#elif [ "$ACTION" == "install-apt-extra" ]; then
+#	fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
 	fn_commit_container
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
