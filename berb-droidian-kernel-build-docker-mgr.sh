@@ -382,7 +382,7 @@ fn_kernel_config_droidian() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
     ## Create packaging dirs if not exist
-    arr_pack_dirs=( "debian" "debian/source" "initramfs-overlay/scripts" )
+    arr_pack_dirs=( "debian" "debian/source" "initramfs-overlay/scripts" "droidian/scripts" "droidian/common_fragments" )
     #arr_dir_exist=()
     for pack_dir in ${arr_pack_dirs[@]}; do
 	#[ -d "${pack_dir}" ] && arr_dir_exist+=( "${pack_dir}" ) || mkdir -p -v "${pack_dir}"
@@ -430,16 +430,10 @@ fn_kernel_config_droidian() {
     fi
     ## Create rules file
     if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
-        echo '#!/usr/bin/make -f' > ${KERNEL_DIR}/debian/rules
-        echo '' >> ${KERNEL_DIR}/debian/rules
-        echo "include /usr/share/linux-packaging-snippets/kernel-snippet.mk" >> ${KERNEL_DIR}/debian/rules
-        echo '%:' >> ${KERNEL_DIR}/debian/rules
-        echo '' >> ${KERNEL_DIR}/debian/rules
-        echo '	dh \$@' >> ${KERNEL_DIR}/debian/rules
-        chmod +x ${KERNEL_DIR}/debian/rules
+        wget ${KERNEL_DIR}/debian/rules \
+	   https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
     fi
     ## Create halium-hooks file
-    [ ! -d "${KERNEL_DIR}/debian/initramfs-overlay/scripts/" ] && mkdir -v -p "${KERNEL_DIR}/debian/initramfs-overlay/scripts"
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
         echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
 	    > ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
@@ -469,7 +463,6 @@ fn_kernel_config_droidian() {
     ## Add defconf fragments
     DEFCONF_FRAGS_DIR="droidian"
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
-    [ -d "${DEFCONF_COMM_FRAGS_DIR}" ] || mkdir -v -p "${DEFCONF_COMM_FRAGS_DIR}"
     
     echo; echo "Checking for defconfig common fragments..."
     DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android/"
