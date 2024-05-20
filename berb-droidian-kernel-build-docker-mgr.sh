@@ -155,7 +155,8 @@ fn_docker_global_config() {
 
 
 fn_install_apt_extra() {
-    APT_INSTALL_EXTRA="net-tools vim locate git bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
+    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, binutils-arm-linux-gnueabi, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross"
+   # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
     #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
     #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
     #clang-android-6.0-4691093 clang-android-10.0-r370808
@@ -363,7 +364,7 @@ fn_kernel_config_droidian() {
     arr_pack_reqs=( "linux-packaging-snippets" )
 
     # Temporary disabled 2024-05-17 ## 
-    #fn_install_apt "${arr_pack_reqs[@]}"
+    fn_install_apt "${arr_pack_reqs[@]}"
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
     for version_str in ${arr_kernel_version_str[@]}; do
@@ -433,6 +434,7 @@ fn_kernel_config_droidian() {
         chmod +x ${KERNEL_DIR}/debian/rules
     fi
     ## Create halium-hooks file
+    [ ! -d "${KERNEL_DIR}/debian/initramfs-overlay/scripts/" ] && mkdir -v -p "${KERNEL_DIR}/debian/initramfs-overlay/scripts"
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
         echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
 	    > ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
@@ -487,7 +489,7 @@ fn_kernel_config_droidian() {
 	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build eror on some devices"
 	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
 	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
-	fn_cmd_on_container
+	# fn_cmd_on_container
     fi
 }
 
