@@ -138,26 +138,49 @@ fn_ip_forward_activa() {
 fn_docker_global_config() {
     ## Docker constants
     CONTAINER_BASE_NAME='droidian-build-env'
-    IMAGE_BASE_NAME='quay.io/droidian/build-essential:trixie-amd64'
+    IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG='trixie-amd64'
-    CONTAINER_COMMITED_NAME='droidian-build-env-custom'
-    IMAGE_COMMIT_NAME='custom/build-essential'
-    IMAGE_COMMIT_TAG='latest'
-    LATEST_TAG_EXIST="$(docker images | grep -v "TAG" | grep "${IMAGE_COMMIT_TAG}" | awk '{print $1}')"
-    if [ -n "${LATEST_TAG_EXIST}" ]; then
-	IMAGE_NAME="${IMAGE_COMMIT_NAME}" 
-	IMAGE_TAG="${IMAGE_BASE_TAG}"
-        CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
-    elif [ -n "${BASE_TAG_EXIST}" ]; then
-    #BASE_TAG_EXIST="$(docker images | grep -v "TAG" | grep "${IMAGE_BASE_TAG}" | awk '{print $1}')"
-	IMAGE_NAME="${IMAGE_BASE_NAME}" 
-	IMAGE_TAG="${IMAGE_COMMIT_TAG}"
+    CONTAINER_COMMITED_NAME='droidian-berb-build-env'
+    IMAGE_COMMIT_NAME='berb/build-essential'
+    IMAGE_COMMIT_TAG='trixie-amd64'
+
+    ## If no docker images found, set default config
+    docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
+    if [ "${docker_how_many_imgs}" -eq "0" ]; then
+	IMAGE_NAME="${IMAGE_BASE_NAME}"
         CONTAINER_NAME="$CONTAINER_BASE_NAME"
+	IMAGE_TAG="${IMAGE_BASE_TAG}"
+	return 0
     fi
+
+    ## If docker images found, search for a commited image with tag=latest
+    img_latest_tag="$(docker images | grep -v "TAG" | grep "${IMAGE_COMMIT_NAME}" \
+	    | grep "latest" | awk '{print $1}')"
+    if [ -n "${img_latest_tag}" ]; then
+        IMAGE_NAME="${IMAGE_COMMIT_NAME}"
+        CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
+        #IMAGE_TAG="${IMAGE_COMMIT_TAG}"
+        IMAGE_TAG="" ## Don't want a tag since we wnt "latest" as tag
+	commited_img_found="True"
+	return 0
+    fi
+
+    ## If docker images found but there isn't latest comit, and the default image exist, set default config
+    img_base_exist="$(docker images | grep -v "TAG" | grep "${IMAGE_BASE_NAME}")"
+    if [ -n "${img_base_exist}" ]; then
+	IMAGE_NAME="${IMAGE_BASE_NAME}"
+	IMAGE_TAG="${IMAGE_BASE_TAG}"
+        CONTAINER_NAME="$CONTAINER_BASE_NAME"
+	return 0
+    fi
+
+    abort "An error occourred setting the CONTAINER_NAME var!"
+
 }
 
 fn_create_container() {
 # Creates the container
+	echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
 	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
 	if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
 		#if [ "$IS_COMMIT"º == "yes" ]; then
@@ -166,8 +189,8 @@ fn_create_container() {
 		#	IMAGE_NAME="$IMAGE_BASE_NAME"
 		#fi
 		echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
-		$SUDO docker -v create --name $CONTAINER_NAME -v $PACKAGES_DIR:/buildd \
-			-v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}"
+		$SUDO docker -v create --name ${CONTAINER_NAME} -v $PACKAGES_DIR:/buildd \
+			-v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
 		echo && echo "Container created!"
 	else
 		echo && echo "Container already exists!" && exit 4
@@ -206,30 +229,52 @@ fn_get_default_container_id() {
 	DEFAULT_CONT_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 }
 fn_commit_container() {
-	if [ "$CONTAINER_NAME" == "droidian-build-env-custom" ]; then
-		echo && echo "Creation of more than 1 commit is not supported."
-		echo "You can change the consts IMAGE_COMMIT_NAME and CONTAINER_COMMITED_NAME values with a new name."
-		echo "After run script again a new commit will be created."
-		echo
-		exit 3
-	fi
-	fn_get_default_container_id
-	# Commit creation
-	echo && echo "Creating commit \"$IMAGE_COMMIT_NAME\"..."
-	echo "Please be patient!!!"
-	${SUDO} docker commit $DEFAULT_CONT_ID $IMAGE_COMMIT_NAME
-	echo && echo "Stoping original container..."
-	${SUDO} docker stop $CONTAINER_NAME
-	# Set container commit name as current container
-	#CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
+    clear
+    echo; echo "INFO about commiting containers"
+    echo && echo "When the first commit is created, a new image from the base container is created"
+    echo "and a container with the container commited name is created from te commited image"
+    echo; echo "The next commits will be taken from the comitted container, updatingd the image and"
+    echo "recreating the container"
+    echo; read -p "Intro to continue..."
+
+    ## Check if a container from a commited image exist. Case exist, create a new commit from commited container
+    ## Otherwise create a commit from the base container.
+    container_exist=$(${SUDO} docker ps -a | grep ${CONTAINER_COMMITED_NAME})
+    if [ -n "${container_exist}" ]; then
+        # Commit creation
+        echo && echo "Creating another committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_COMMITED_NAME}\" container..."
+        echo "Please be patient!!!"
+        ${SUDO} docker commit "${CONTAINER_COMMITED_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
+        ${SUDO} docker stop "${CONTAINER_COMMITED_NAME}"
+        ${SUDO} docker rm "${CONTAINER_COMMITED_NAME}"
 	# Create new container from commit image.
-	echo && echo "Creating new container from te commit..."
+	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
+	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
+	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
+	echo && echo "Recreating ${CONTAINER_NAME} container from committed image ${IMAGE_NAME}:${IMAGE_TAG}..."
 	fn_create_container
-	echo && echo Creation of the new commit and container with the current state is finished!
+	echo && echo Creation of another commit and container with the current state is finished!
 	echo
+    else
+        # Commit creation
+        echo && echo "Creating the first committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_BASE_NAME}\" container..."
+        echo "Please be patient!!!"
+        ${SUDO} docker commit "${CONTAINER_BASE_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
+	# Create new container from commit image.
+	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
+	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
+	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
+	echo && echo "Creating new ${CONTAINER_NAME} container from committed imag ${IMAGE_NAME}:${IMAGE_TAG}..."
+	fn_create_container
+	echo && echo Creation of the first commit and container with the current state is finished!
+	echo
+    fi
+	   
+    exit
+	   
 }
 fn_shell_to_container() {
-    ${SUDO} docker exec -it $CONTAINER_NAME bash
+    ${SUDO} docker exec -it $CONTAINER_NAME bash --login
 }
 fn_cmd_on_container() {
     ${SUDO} docker exec -it ${CONTAINER_NAME} ${CMD}
@@ -548,7 +593,6 @@ fn_action_prompt() {
         echo "     Commits current container state."
         echo "     Then creates new container from the commit."
         echo "     If a image with tag latest is found, it will be used by default"
-	echo "     ## Actually only support 1 existing commit at same time!"
 	#echo && echo " 6 - Install extra packages from apt."
 	echo && echo " 7 - Shell to container"
 #	echo " 8 - Command to container" # only internal use
@@ -606,9 +650,9 @@ fn_action_prompt() {
 ## Configuration
 fn_ip_forward_activa
 fn_configura_sudo
+fn_docker_global_config
 fn_verificacions_path
 fn_build_env_base_paths_config
-fn_docker_global_config
 fn_action_prompt
 #fn_set_container_commit_if_exists
 
