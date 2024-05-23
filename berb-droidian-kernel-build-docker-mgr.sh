@@ -106,13 +106,7 @@ missatge_return() {
     return 0
 }
 
-fn_verificacions_path() {
-    START_DIR=$(pwd)
-    # Cerca un aerxiu README de linux kernel
-    [ ! -e "$START_DIR/README" ] && abort "README file not found. Please exec th script from the git kernel dir"
-    IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-    [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
-}
+
 
 
 ######################
@@ -137,10 +131,10 @@ fn_ip_forward_activa() {
 ######################
 fn_docker_global_config() {
     ## Docker constants
-    CONTAINER_BASE_NAME='droidian-build-env'
+    CONTAINER_BASE_NAME="droidian-build-env-${kernel_device}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG='trixie-amd64'
-    CONTAINER_COMMITED_NAME='droidian-berb-build-env'
+    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${kernel_device}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG='trixie-amd64'
 
@@ -180,21 +174,16 @@ fn_docker_global_config() {
 
 fn_create_container() {
 # Creates the container
-	echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
-	CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
-	if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
-		#if [ "$IS_COMMIT"º == "yes" ]; then
-		#	IMAGE_NAME="$IMAGE_COMMIT_NAME:$IMAGE_COMMIT_TAG"
-		#else
-		#	IMAGE_NAME="$IMAGE_BASE_NAME"
-		#fi
-		echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
-		$SUDO docker -v create --name ${CONTAINER_NAME} -v $PACKAGES_DIR:/buildd \
-			-v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
-		echo && echo "Container created!"
-	else
-		echo && echo "Container already exists!" && exit 4
-	fi
+    echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
+    CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
+    if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
+	echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
+	$SUDO docker -v create --name ${CONTAINER_NAME} -v $PACKAGES_DIR:/buildd \
+	    -v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+	echo && echo "Container created!"
+    else
+	echo && echo "Container already exists!" && exit 4
+    fi
 }
 fn_remove_container() {
 # Removes a the container
@@ -231,7 +220,8 @@ fn_get_default_container_id() {
 fn_commit_container() {
     clear
     echo; echo "INFO about commiting containers"
-    echo && echo "When the first commit is created, a new image from the base container is created"
+    echo; echo "UNDER REVISION"
+    echo; echo "When the first commit is created, a new image from the base container is created"
     echo "and a container with the container commited name is created from te commited image"
     echo; echo "The next commits will be taken from the comitted container, updatingd the image and"
     echo "recreating the container"
@@ -269,9 +259,6 @@ fn_commit_container() {
 	echo && echo Creation of the first commit and container with the current state is finished!
 	echo
     fi
-	   
-    exit
-	   
 }
 fn_shell_to_container() {
     ${SUDO} docker exec -it $CONTAINER_NAME bash --login
@@ -304,30 +291,35 @@ fn_setup_build_env() {
 	echo && echo "To do."
 }
 fn_build_env_base_paths_config() {
-	# Set SOURCES_PATH to parent kernel dir
-	SOURCES_PATH="$(dirname ${START_DIR})"
-	## get kernel info
-	export KERNEL_DIR="${START_DIR}"
-	# Set KERNEL_NAME to current dir name
-	KERNEL_NAME=$(basename ${START_DIR})
-	export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+    START_DIR=$(pwd)
+    # Cerca un aerxiu README de linux kernel
+    [ ! -e "$START_DIR/README" ] && abort "README file not found. Please exec th script from the git kernel dir"
+    IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
+    [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
+    # Set SOURCES_PATH to parent kernel dir
+    SOURCES_PATH="$(dirname ${START_DIR})"
+    ## get kernel info
+    export KERNEL_DIR="${START_DIR}"
+    # Set KERNEL_NAME to current dir name
+    KERNEL_NAME=$(basename ${START_DIR})
+    kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
+    export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+    ## Set kernel build output paths
+    KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
+    KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
+    KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
+    KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
+    KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
+    ## Create kernel build output dirs
+    # [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
+    [ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
+    [ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
+    [ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
+    [ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
+    [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
 
-	## Set kernel build output paths
-	KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
-	KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
-	KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
-	KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
-	KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
-	## Create kernel build output dirs
-  	# [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
-  	[ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
-  	[ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
-  	[ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
-  	[ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
-
-	## Backups info
-	BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+    ## Backups info
+    BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 }
 
 fn_install_apt_extra() {
@@ -348,8 +340,7 @@ fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
-    # Temporary disabled 2024-05-17 ## 
-    fn_install_apt "${arr_pack_reqs[@]}"
+    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
 
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
@@ -498,7 +489,13 @@ fn_build_kernel_on_container() {
     echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo 'exit' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo "" >> $KERNEL_DIR/compile-droidian-kernel.sh
 
+    #echo "export PATH=\"/buildd/sources/droidian/python/2.7.5/bin:$PATH\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export LD_LIBRARY_PATH=\"/buildd/sources/droidian/python/2.7.5/bin\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export PYTHONPATH=\"/buildd/sources/droidian/python/2.7.5/lib/python2.7\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "" >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
     # ask for disable install build deps in debian/kernel.mk if enabled.
@@ -511,6 +508,7 @@ fn_build_kernel_on_container() {
     #			;;
     #	esac
     #fi
+    
     ${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
     echo  && echo "Compilation finished."
 
@@ -650,9 +648,8 @@ fn_action_prompt() {
 ## Configuration
 fn_ip_forward_activa
 fn_configura_sudo
-fn_docker_global_config
-fn_verificacions_path
 fn_build_env_base_paths_config
+fn_docker_global_config
 fn_action_prompt
 #fn_set_container_commit_if_exists
 
