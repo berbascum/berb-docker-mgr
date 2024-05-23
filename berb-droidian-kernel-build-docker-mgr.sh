@@ -287,9 +287,6 @@ fn_install_apt() {
 ############################
 ## Kernel build functions ##
 ############################
-fn_setup_build_env() {
-	echo && echo "To do."
-}
 fn_build_env_base_paths_config() {
     START_DIR=$(pwd)
     # Cerca un aerxiu README de linux kernel
