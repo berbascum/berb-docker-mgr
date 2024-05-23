@@ -389,6 +389,8 @@ fn_kernel_config_droidian() {
 	echo; read -p "Enter the defconf file name: " answer
 	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
+    ## Check if one of the mínimal vars is unconfigured
+    ## TODO: Implement a for to check all the mínimal vars
     kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
     [ -n "${kernel_info_mk_is_configured}" ] && abort "kernel-info.mk is unconfigured!"
 
@@ -402,27 +404,13 @@ fn_kernel_config_droidian() {
     fi
     ## Create rules file
     if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
+	url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
         wget ${KERNEL_DIR}/debian/rules \
-	   https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
     fi
     ## Create halium-hooks file
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
-        echo "# Initramfs hooks for Xiaomi Pocophone X3 Pro" \
-	    > ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "halium_hook_setup_touchscreen() {" \
-	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "        echo 1 > /sys/class/leds/:kbd_backlight/brightness" \
- 	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "}" \
-	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "" \
- 	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "halium_hook_teardown_touchscreen() {" \
-	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "        echo 0 > /sys/class/leds/:kbd_backlight/brightness" \
-	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        echo "}" \
-	>> ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
+        url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/initramfs-overlay/scripts/halium-hooks 
+        wget ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks "${url}"
         chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
     fi
 
@@ -435,7 +423,6 @@ fn_kernel_config_droidian() {
     ## Add defconf fragments
     DEFCONF_FRAGS_DIR="droidian"
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
-    
     ## Get Droidian defconfig common_fragments
     echo; echo "Checking for defconfig common fragments..."
     DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android"
