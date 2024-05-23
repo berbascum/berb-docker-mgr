@@ -437,12 +437,12 @@ fn_kernel_config_droidian() {
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
     
     echo; echo "Checking for defconfig common fragments..."
-    DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android/"
+    DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android"
     arr_frag_files=( "debug.config" "droidian.config" "halium.config" )
     for frag_file in ${arr_frag_files[@]}; do
 	## Get the file if not exist
 	[ -f "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" ] \
-	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" "${DEFCONF_COMM_FRAGS_URL}${frag_file}" 2>&1  >/dev/null
+	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" "${DEFCONF_COMM_FRAGS_URL}/${frag_file}" 2>&1  >/dev/null
    done
 
     echo; echo "Checking for device defconfig fragment..."
