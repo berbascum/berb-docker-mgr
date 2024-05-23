@@ -458,13 +458,16 @@ fn_kernel_config_droidian() {
 	&& cp -v "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" \
 	"${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config"
 
+<< "DISABLE_FN"
     ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
+    ## CURRENTLY not used since the Droidian packaging configures the 32 bit compiler
     if [ "$DEVICE_MODEL" == "vayu" ]; then
 	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build eror on some devices"
 	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
 	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
 	# fn_cmd_on_container
     fi
+DISABLE_FN
 
     ## Sow vars defined
     fn_print_vars
