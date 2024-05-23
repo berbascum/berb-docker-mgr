@@ -436,22 +436,27 @@ fn_kernel_config_droidian() {
     DEFCONF_FRAGS_DIR="droidian"
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
     
+    ## Get Droidian defconfig common_fragments
     echo; echo "Checking for defconfig common fragments..."
     DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android"
     arr_frag_files=( "debug.config" "droidian.config" "halium.config" )
     for frag_file in ${arr_frag_files[@]}; do
 	## Get the file if not exist
 	[ -f "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" ] \
-	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" "${DEFCONF_COMM_FRAGS_URL}/${frag_file}" 2>&1  >/dev/null
+	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" \
+	   "${DEFCONF_COMM_FRAGS_URL}/${frag_file}" 2>&1  >/dev/null
    done
 
-    echo; echo "Checking for device defconfig fragment..."
+    ## Get Droidian defconfig prox1_fragment file and save as sample
     DEFCONF_DEV_FRAG_URL="https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/droidian/pro1x.config"
+    echo; echo "Checking for device defconfig fragment sample file..."
     ## Get the file if not exist
-    [ -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
-       || wget -O "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" "${DEFCONF_DEV_FRAG_URL}"
-
-
+    [ ! -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" ] \
+        &&  wget -O "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" "${DEFCONF_DEV_FRAG_URL}"
+    ## Create the device fragment file if not exist
+    [ ! -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
+	&& cp -v "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" \
+	"${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config"
 
     ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
     if [ "$DEVICE_MODEL" == "vayu" ]; then
