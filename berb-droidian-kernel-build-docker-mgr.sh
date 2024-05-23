@@ -318,7 +318,6 @@ fn_build_env_base_paths_config() {
     ## Backups info
     BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 }
-
 fn_install_apt_extra() {
     APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps"
    # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
@@ -386,6 +385,7 @@ fn_kernel_config_droidian() {
 	echo; read -p "Enter the defconf file name: " answer
 	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
+
     ## Check if one of the mínimal vars is unconfigured
     ## TODO: Implement a for to check all the mínimal vars
     kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
@@ -402,7 +402,7 @@ fn_kernel_config_droidian() {
     ## Create rules file
     if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
 	url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
-        wget ${KERNEL_DIR}/debian/rules \
+        wget ${KERNEL_DIR}/debian/rules ${url}
     fi
     ## Create halium-hooks file
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
@@ -455,9 +455,6 @@ DISABLE_FN
 
     ## Sow vars defined
     fn_print_vars
-
-    ## Install extra packages
-    #fn_install_apt_extra
 }
 
 fn_build_kernel_on_container() {
@@ -577,20 +574,21 @@ fn_action_prompt() {
 	echo && echo "Action is required:"
 	echo && echo " 1 - Create container"
 	echo " 2 - Remove container"
-	echo && echo " 3 - Start container"
+	echo; echo " 3 - Start container"
 	echo " 4 - Stop container"
-	echo && echo " 5 - Commit container"
+	echo; echo " 5 - Commit container"
         echo "     Commits current container state."
         echo "     Then creates new container from the commit."
         echo "     If a image with tag latest is found, it will be used by default"
-	#echo && echo " 6 - Install extra packages from apt."
-	echo && echo " 7 - Shell to container"
+	echo; echo " 6 - Install extra packages from apt."
+	echo "     Not fully working!"
+	echo; echo " 7 - Shell to container"
 #	echo " 8 - Command to container" # only internal use
 #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
-	echo && echo "10 - Build kernel on container"
-	echo && echo "11 - Configure a Droidian kernel (android kernel)"
-	echo && echo "12 - Backup kernel build output relevant files"
-	echo && read -p "Select an option: " OPTION
+	echo; echo "10 - Build kernel on container"
+	echo; echo "11 - Configure a Droidian kernel (android kernel)"
+	echo; echo "12 - Backup kernel build output relevant files"
+	echo; read -p "Select an option: " OPTION
 	case $OPTION in
 		1)
 			ACTION="create"
@@ -607,9 +605,9 @@ fn_action_prompt() {
 		5)
 			ACTION="commit-container"
 			;;
-#		5)
-#			ACTION="install-apt-extra"
-#			;;
+		6)
+			ACTION="install-apt-extra"
+			;;
 		7)
 			ACTION="shell-to"
 			;;
@@ -665,8 +663,8 @@ elif [ "$ACTION" == "shell-to" ]; then
 #	fn_build_env_base_paths_config
 elif [ "$ACTION" == "config-droidian-kernel" ]; then
 	fn_kernel_config_droidian
-#elif [ "$ACTION" == "install-apt-extra" ]; then
-#	fn_install_apt_extra
+elif [ "$ACTION" == "install-apt-extra" ]; then
+	fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
 	fn_commit_container
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
