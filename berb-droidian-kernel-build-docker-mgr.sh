@@ -87,12 +87,12 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
 ## Configurations ##
 ####################
 fn_configura_sudo() {
-	if [ "$USER" != "root" ]; then SUDO='sudo'; fi
+    if [ "$USER" != "root" ]; then SUDO='sudo'; fi
 }
 
 abort() {
-	echo; echo "$*"
-	exit 1
+    echo; echo "$*"
+    exit 1
 }
 
 missatge() {
@@ -104,24 +104,20 @@ missatge_return() {
     return 0
 }
 
-
-
-
 ######################
 ## Config functions ##
 ######################
 fn_ip_forward_activa() {
-	## Activa ipv4_forward (requerit per xarxa containers) i reinicia docker.
-	## És la primera funció que crida l'script
-	FORWARD_ES_ACTIVAT=$(cat /proc/sys/net/ipv4/ip_forward)
-	if [ "$FORWARD_ES_ACTIVAT" -eq "0" ]; then
-		echo "" && echo "Activant ip4_forward..."
-		${SUDO} sysctl -w net.ipv4.ip_forward=1
-		${SUDO} systemctl restart docker
-	else
-		echo && echo "ip4_forward prèviament activat!"
-	fi
-
+    ## Activa ipv4_forward (requerit per xarxa containers) i reinicia docker.
+    ## És la primera funció que crida l'script
+    FORWARD_ES_ACTIVAT=$(cat /proc/sys/net/ipv4/ip_forward)
+    if [ "$FORWARD_ES_ACTIVAT" -eq "0" ]; then
+  	echo "" && echo "Activant ip4_forward..."
+	${SUDO} sysctl -w net.ipv4.ip_forward=1
+	${SUDO} systemctl restart docker
+    else
+	echo && echo "ip4_forward prèviament activat!"
+    fi
 }
 
 ######################
@@ -183,38 +179,43 @@ fn_create_container() {
 	echo && echo "Container already exists!" && exit 4
     fi
 }
+
 fn_remove_container() {
-# Removes a the container
-	CONTAINER_EXIST=$(${SUDO} docker ps -a | grep -c "$CONTAINER_NAME")
-	CONTAINER_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-	if [ "$CONTAINER_EXIST" -eq '0' ]; then
-		echo && echo "Container $CONTAINER_NAME not exists..."
-		echo
-	else
-		echo && read -p "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? " RM_CONT
-	fi
-	if [ "$RM_CONT" == "yes" ]; then
-		echo && echo "Removing container..."
-		fn_stop_container
-		${SUDO} docker rm $CONTAINER_ID
-	else
-		echo && echo "Container $CONTAINER_NAME will NOT be removed as user choice"
-		echo
-	fi
+    # Removes a the container
+    CONTAINER_EXIST=$(${SUDO} docker ps -a | grep -c "$CONTAINER_NAME")
+ 	CONTAINER_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    if [ "$CONTAINER_EXIST" -eq '0' ]; then
+	echo && echo "Container $CONTAINER_NAME not exists..."
+	echo
+    else
+	echo && read -p "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? " RM_CONT
+    fi
+    if [ "$RM_CONT" == "yes" ]; then
+ 	echo && echo "Removing container..."
+	fn_stop_container
+	${SUDO} docker rm $CONTAINER_ID
+    else
+	echo && echo "Container $CONTAINER_NAME will NOT be removed as user choice"
+	echo
+    fi
 }
+
 fn_start_container() {
-	IS_STARTED=$(${SUDO} docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
-	if [ "$IS_STARTED" -eq "0" ]; then
-		$SUDO docker start $CONTAINER_NAME
-	fi
+    IS_STARTED=$(${SUDO} docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
+    if [ "$IS_STARTED" -eq "0" ]; then
+	$SUDO docker start $CONTAINER_NAME
+    fi
 }
+
 fn_stop_container() {
-	${SUDO} docker stop $CONTAINER_NAME
+    ${SUDO} docker stop $CONTAINER_NAME
 }
+
 fn_get_default_container_id() {
-	# Search for original container id
-	DEFAULT_CONT_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    # Search for original container id
+    DEFAULT_CONT_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 }
+
 fn_commit_container() {
     clear
     echo; echo "INFO about commiting containers"
@@ -258,15 +259,19 @@ fn_commit_container() {
 	echo
     fi
 }
+
 fn_shell_to_container() {
     ${SUDO} docker exec -it $CONTAINER_NAME bash --login
 }
+
 fn_cmd_on_container() {
     ${SUDO} docker exec -it ${CONTAINER_NAME} ${CMD}
 }
+
 fn_cp_to_container() {
     ${SUDO} docker cp ${copy_src} ${CONTAINER_NAME}:${copy_dst}
 }
+
 fn_cp_from_container() {
     ${SUDO} docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
 }
@@ -501,49 +506,47 @@ fn_build_kernel_on_container() {
 }
 
 fn_create_outputs_backup() {
-	## TODO: Needs a full revision
-	## Moving output deb files to $PACKAGES_DIR/debs
-	echo && echo Moving output deb files to $KERNEL_BUILD_OUT_DEBS_PATH
-	mv $PACKAGES_DIR/*.deb $KERNEL_BUILD_OUT_DEBS_PATH
+    ## TODO: Needs a full revision
+    ## Moving output deb files to $PACKAGES_DIR/debs
+    echo && echo Moving output deb files to $KERNEL_BUILD_OUT_DEBS_PATH
+    mv $PACKAGES_DIR/*.deb $KERNEL_BUILD_OUT_DEBS_PATH
+    ## Moving output log files to $PACKAGES_DIR/logs
+    echo && echo Moving output log files to $KERNEL_BUILD_OUT_LOGS_PATH
+    mv $PACKAGES_DIR/*.build* $KERNEL_BUILD_OUT_LOGS_PATH
 
-	## Moving output log files to $PACKAGES_DIR/logs
-	echo && echo Moving output log files to $KERNEL_BUILD_OUT_LOGS_PATH
-	mv $PACKAGES_DIR/*.build* $KERNEL_BUILD_OUT_LOGS_PATH
+    ## Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
+    arr_OUT_DIR_FILES=( \
+	'boot.img' 'dtbo.img' 'initramfs.gz' 'recovery*' 'target-dtb' 'vbmeta.img' 'arch/arm64/boot/Image.gz' )
+    echo && echo "Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
+    cd $KERNEL_BUILD_OUT_KOBJ_PATH
+    for i in ${arr_OUT_DIR_FILES[@]}; do
+ 	cp -a $i $KERNEL_BUILD_OUT_OTHER_PATH
+    done
+    cd $START_DIR
 
-	## Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
-	arr_OUT_DIR_FILES=( \
-		'boot.img' 'dtbo.img' 'initramfs.gz' 'recovery*' 'target-dtb' 'vbmeta.img' 'arch/arm64/boot/Image.gz' \
-		)
-	echo && echo "Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
-	cd $KERNEL_BUILD_OUT_KOBJ_PATH
-	for i in ${arr_OUT_DIR_FILES[@]}; do
-		cp -a $i $KERNEL_BUILD_OUT_OTHER_PATH
-	done
-	cd $START_DIR
+    ## Copyng device defconfig file to PACKAGES_DIR..."
+    echo && echo " Copyng $DEVICE_DEFCONFIG_FILE file to $PACKAGES_DIR..."
+    cp -a "arch/$DEVICE_ARCH/configs/$DEVICE_DEFCONFIG_FILE" $PACKAGES_DIR
 
-	## Copyng device defconfig file to PACKAGES_DIR..."
-	echo && echo " Copyng $DEVICE_DEFCONFIG_FILE file to $PACKAGES_DIR..."
-	cp -a "arch/$DEVICE_ARCH/configs/$DEVICE_DEFCONFIG_FILE" $PACKAGES_DIR
-	
-	## Copyng debian dir to final outputs dir..."
-	arr_DEBIAN_FILES=( \
-		'debian/copyright' 'debian/compat' 'debian/kernel-info.mk' 'debian/rules' 'debian/source' 'debian/initramfs-overlay'  \
-		)
-	echo && echo "Copying debian dir to $KERNEL_BUILD_OUT_DEBS_PATH..."
-	cp -a debian/* $KERNEL_BUILD_OUT_DEBS_PATH/
-	for i in ${arr_DEBIAN_FILES[@]}; do
-		cp -a $KERNEL_BUILD_OUT_DEBS_PATH/$i debian/
-	done
-	## Make a tar.gz from PACKAGES_DIR
-	echo && echo "Creating $BACKUP_FILE_NOM from $PACKAGES_DIR"
-	cd $SOURCES_PATH
-	tar zcvf $BACKUP_FILE_NOM $PACKAGES_DIR
-	if [ "$?" -eq '0' ]; then
-		echo && echo "Backup $BACKUP_FILE_NOM created on the parent dir"
-	else
-		echo && echo "Backup $BACKUP_FILE_NOM failed!!!"
-	fi
-	cd $START_DIR
+    ## Copyng debian dir to final outputs dir..."
+    arr_DEBIAN_FILES=( \
+	'debian/copyright' 'debian/compat' 'debian/kernel-info.mk' 'debian/rules' \
+	'debian/source' 'debian/initramfs-overlay' )
+    echo && echo "Copying debian dir to $KERNEL_BUILD_OUT_DEBS_PATH..."
+    cp -a debian/* $KERNEL_BUILD_OUT_DEBS_PATH/
+    for i in ${arr_DEBIAN_FILES[@]}; do
+ 	cp -a $KERNEL_BUILD_OUT_DEBS_PATH/$i debian/
+    done
+    ## Make a tar.gz from PACKAGES_DIR
+    echo && echo "Creating $BACKUP_FILE_NOM from $PACKAGES_DIR"
+    cd $SOURCES_PATH
+    tar zcvf $BACKUP_FILE_NOM $PACKAGES_DIR
+    if [ "$?" -eq '0' ]; then
+ 	echo && echo "Backup $BACKUP_FILE_NOM created on the parent dir"
+    else
+	echo && echo "Backup $BACKUP_FILE_NOM failed!!!"
+    fi
+    cd $START_DIR
 }
 
 fn_print_vars() {
@@ -568,64 +571,64 @@ fn_print_vars() {
 
 fn_action_prompt() {
 ## Function to get a action
-	echo && echo "Action is required:"
-	echo && echo " 1 - Create container"
-	echo " 2 - Remove container"
-	echo; echo " 3 - Start container"
-	echo " 4 - Stop container"
-	echo; echo " 5 - Commit container"
-        echo "     Commits current container state."
-        echo "     Then creates new container from the commit."
-        echo "     If a image with tag latest is found, it will be used by default"
-	echo; echo " 6 - Install extra packages from apt."
-	echo "     Not fully working!"
-	echo; echo " 7 - Shell to container"
-#	echo " 8 - Command to container" # only internal use
-#	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
-	echo; echo "10 - Build kernel on container"
-	echo; echo "11 - Configure a Droidian kernel (android kernel)"
-	echo; echo "12 - Backup kernel build output relevant files"
-	echo; read -p "Select an option: " OPTION
-	case $OPTION in
-		1)
-			ACTION="create"
-			;;
-		2)
-			ACTION="remove"
-			;;
-		3)
-			ACTION="start"
-			;;
-		4)
-			ACTION="stop"
-			;;
-		5)
-			ACTION="commit-container"
-			;;
-		6)
-			ACTION="install-apt-extra"
-			;;
-		7)
-			ACTION="shell-to"
-			;;
-#		8)
-#			ACTION="command-to"
-#			;;
-#		9)
-#			ACTION="setup-build-env"
-#			;;
-		10)
-			ACTION="build-kernel-on-container"
-			;;
-		11)
-			ACTION="config-droidian-kernel"
-			;;
-		12)
-			ACTION="create-outputs-backup"
-			;;
-		*)
-			echo "" && echo "Option not implemented!" && exit 1
-			;;
+    echo && echo "Action is required:"
+    echo && echo " 1 - Create container"
+    echo " 2 - Remove container"
+    echo; echo " 3 - Start container"
+    echo " 4 - Stop container"
+    echo; echo " 5 - Commit container"
+    echo "     Commits current container state."
+    echo "     Then creates new container from the commit."
+    echo "     If a image with tag latest is found, it will be used by default"
+    echo; echo " 6 - Install extra packages from apt."
+    echo "     Not fully working!"
+    echo; echo " 7 - Shell to container"
+    #	echo " 8 - Command to container" # only internal use
+    #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
+    echo; echo "10 - Build kernel on container"
+    echo; echo "11 - Configure a Droidian kernel (android kernel)"
+    echo; echo "12 - Backup kernel build output relevant files"
+    echo; read -p "Select an option: " OPTION
+    case $OPTION in
+	1)
+	    ACTION="create"
+	    ;;
+	2)
+	    ACTION="remove"
+	    ;;
+	3)
+	    ACTION="start"
+	    ;;
+	4)
+	    ACTION="stop"
+	    ;;
+	5)
+	    ACTION="commit-container"
+	    ;;
+	6)
+	    ACTION="install-apt-extra"
+	    ;;
+	7)
+	    ACTION="shell-to"
+	    ;;
+#	8)
+#	    ACTION="command-to"
+#	    ;;
+#	9)
+#	    ACTION="setup-build-env"
+#	    ;;
+	10)
+	    ACTION="build-kernel-on-container"
+	    ;;
+	11)
+	    ACTION="config-droidian-kernel"
+	    ;;
+	12)
+	    ACTION="create-outputs-backup"
+	    ;;
+	*)
+	    echo "" && echo "Option not implemented!" && exit 1
+	    ;;
 	esac
 }
 
@@ -645,30 +648,30 @@ echo
 
 ## Execute action on container name
 if [ "$ACTION" == "create" ]; then
-	fn_create_container
+´   fn_create_container
 elif [ "$ACTION" == "remove" ]; then
-	fn_remove_container
+    fn_remove_container
 elif [ "$ACTION" == "start" ]; then
-	fn_start_container
+    fn_start_container
 elif [ "$ACTION" == "stop" ]; then
-	fn_stop_container
+    fn_stop_container
 elif [ "$ACTION" == "shell-to" ]; then
-	fn_shell_to_container
+    fn_shell_to_container
 #elif [ "$ACTION" == "command-to" ]; then
-#	fn_cmd_on_container
+#   fn_cmd_on_container
 #elif [ "$ACTION" == "setup-build-env" ]; then
-#	fn_build_env_base_paths_config
+#   fn_build_env_base_paths_config
 elif [ "$ACTION" == "config-droidian-kernel" ]; then
-	fn_kernel_config_droidian
+    fn_kernel_config_droidian
 elif [ "$ACTION" == "install-apt-extra" ]; then
-	fn_install_apt_extra
+    fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
-	fn_commit_container
+    fn_commit_container
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
-	fn_build_kernel_on_container
+    fn_build_kernel_on_container
 elif [ "$ACTION" == "create-outputs-backup" ]; then
-	fn_create_outputs_backup
+    fn_create_outputs_backup
 else
-	echo "SCRIPT END: Action not implemented."
+    echo "SCRIPT END: Action not implemented."
 fi
 
