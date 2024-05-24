@@ -51,12 +51,10 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
     # New: fn_configura_sudo
     # New: fn_build_env_base_paths_config
     # New: Implemented kernel path auto detection
-    # New: Basic check to determine if start dir a kernel source root dir.
-    # New: fn_create_outputs_backup: After compilation, script archives most output relevant files and archive them to tar.gz
+    # New: Implemented multiple container with different mounted kernel sources
+    # New: Basic check to determine if the start dir is a kernel source root dir and a git repo too.
+    # New: fn_create_outputs_backup: NOT DONE: After compilation, script archives most output relevant files and archive them to tar.gz
     # New: fn_remove_container
-    # Conf: Add net-tools to apt depends
-    # Fix: docker image name for new container creation.
-    # 
 
   # v_0.0.2-1
     # New: fn_ip_forward_activa
@@ -464,7 +462,8 @@ fn_build_kernel_on_container() {
     [ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
     # Script creation to launch compilation inside the container.
     echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
-    echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
@@ -476,15 +475,12 @@ fn_build_kernel_on_container() {
     echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo 'exit' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo "" >> $KERNEL_DIR/compile-droidian-kernel.sh
-
+    #echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PATH=\"/buildd/sources/droidian/python/2.7.5/bin:$PATH\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export LD_LIBRARY_PATH=\"/buildd/sources/droidian/python/2.7.5/bin\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONPATH=\"/buildd/sources/droidian/python/2.7.5/lib/python2.7\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
     # ask for disable install build deps in debian/kernel.mk if enabled.
@@ -499,12 +495,13 @@ fn_build_kernel_on_container() {
     #fi
     
     ${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
-    echo  && echo "Compilation finished."
+    echo; echo "Compilation finished."
 
     # fn_create_outputs_backup
 }
 
 fn_create_outputs_backup() {
+	## TODO: Needs a full revision
 	## Moving output deb files to $PACKAGES_DIR/debs
 	echo && echo Moving output deb files to $KERNEL_BUILD_OUT_DEBS_PATH
 	mv $PACKAGES_DIR/*.deb $KERNEL_BUILD_OUT_DEBS_PATH
