@@ -4,6 +4,7 @@
 TOOL_NAME='berb-droidian-kernel-build-docker-mgr'
 TOOL_VERSION='1.0.0.3'
 TOOL_BRANCh="release/${TOOL_VERSION}"
+TESTED_BASH_VER='5.2.15'
 
 # Not used yet by this script:
 # VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
@@ -55,6 +56,7 @@ TOOL_BRANCh="release/${TOOL_VERSION}"
     # New: Basic check to determine if the start dir is a kernel source root dir and a git repo too.
     # New: fn_create_outputs_backup: NOT DONE: After compilation, script archives most output relevant files and archive them to tar.gz
     # New: fn_remove_container
+    # New Check the minimal recomended bash version"
 
   # v_0.0.2-1
     # New: fn_ip_forward_activa
@@ -103,6 +105,25 @@ missatge_return() {
     echo; echo "$*"
     return 0
 }
+
+fn_check_bash_ver() {
+    bash_ver=$(bash --version | head -n 1 | awk '{print $4}' | awk -F'(' '{print $1}' | awk -F'.' '{print $1"."$2"."$3}')
+    IFS_BKP=$IFS
+    IFS='.' read -r vt_major vt_minor vt_patch <<< "${TESTED_BASH_VER}"
+    IFS='.' read -r v_major v_minor v_patch <<< "${bash_ver}"
+    IFS=$IFS_BKP
+    if [[ $v_major -lt $vt_major ]] || \
+           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -lt $vt_minor ]]) || \
+           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -eq $vt_minor ]] && [[ $v_patch -lt $vt_patch ]]); then
+    	clear
+        echo; echo "Bash version detected is lower than tested version"
+        echo "If getting errors during script execution, try upgrading bash to \"${TESTED_BASH_VER}\" version"
+	echo; read -p "Press Inro to continue"
+    else
+        echo; echo "Bash version requirements are fine"
+    fi
+}
+
 
 ######################
 ## Config functions ##
@@ -638,6 +659,7 @@ fn_action_prompt() {
 ## Configuration
 fn_ip_forward_activa
 fn_configura_sudo
+fn_check_bash_ver
 fn_build_env_base_paths_config
 fn_docker_global_config
 fn_action_prompt
