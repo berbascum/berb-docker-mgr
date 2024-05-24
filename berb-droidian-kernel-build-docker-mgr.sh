@@ -1,14 +1,5 @@
 #!/bin/bash
 
-
-TOOL_NAME='berb-droidian-kernel-build-docker-mgr'
-TOOL_VERSION='1.0.0.3'
-TOOL_BRANCh="release/${TOOL_VERSION}"
-TESTED_BASH_VER='5.2.15'
-
-# Not used yet by this script:
-# VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
-
 # Upstream-Name: berb-droidian-kernel-build-docker-mgr
 # Source: https://gitlab.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
   ## Script that manages a custom docker container with Droidian build environment
@@ -85,9 +76,20 @@ TESTED_BASH_VER='5.2.15'
     # Starting version. Just create a conbtainer from Droidian build-essential image.
     
 
-####################
-## Configurations ##
-####################
+#################
+## Header vars ##
+#################
+TOOL_NAME='berb-droidian-kernel-build-docker-mgr'
+TOOL_VERSION='1.0.0.3'
+TOOL_BRANCh="release/${TOOL_VERSION}"
+TESTED_BASH_VER='5.2.15'
+
+# Not used yet by this script:
+# VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
+
+######################
+## Global functions ##
+######################
 fn_configura_sudo() {
     if [ "$USER" != "root" ]; then SUDO='sudo'; fi
 }
