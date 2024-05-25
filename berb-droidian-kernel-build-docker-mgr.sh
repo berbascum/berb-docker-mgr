@@ -509,7 +509,11 @@ fn_build_kernel_on_container() {
     #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONPATH=\"/buildd/sources/droidian/python/2.7.5/lib/python2.7\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo "RELENG_HOST_ARCH=\"arm64\" /buildd/sources/releng-build-package-berb-edited" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    wget -O $KERNEL_DIR/releng-build-package-berb-edited \
+	    https://raw.githubusercontent.com/droidian-berb/berb-droidian-kernel-build-docker-mgr/release/1.0.0-3/releng-build-package-berb-edited
+    ${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
+    #echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
     # ask for disable install build deps in debian/kernel.mk if enabled.
     #INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
