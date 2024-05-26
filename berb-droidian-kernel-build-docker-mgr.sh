@@ -358,6 +358,29 @@ fn_install_apt_extra() {
     fn_install_apt "${APT_INSTALL_EXTRA}"
 }
 
+fn_patch_kernel_snippet_cross_32() {
+    ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
+    ## CURRENTLY not used since the Droidian packaging configures the 32 bit compiler
+    if [ "$DEVICE_MODEL" == "vayu" ]; then
+	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build error on some devices"
+	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
+	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
+	fn_cmd_on_container
+    fi
+}
+fn_patch_kernel_snippet_python275b_path() {
+    ## Patch kenel-snippet.mk to add te python275b path to the FULL_PATH var
+    if [ "$DEVICE_MODEL" == "vayu" ]; then
+	echo; echo "Patching kernel-snippet.mk to add te python275b path to the FULL_PATH var"
+	# WORKS replace_pattern='s|debian/path-override:|debian/path-override:/buildd/sources/droidian/python/2.7.5/bin:|g'
+	replace_pattern='s|$(BUILD_PATH):$(CURDIR)/debian/path-override:|$(BUILD_PATH):$(CURDIR)/debian/path-override:/buildd/sources/droidian/python/2.7.5/bin:|g'
+	#replace_pattern="s|FULL_PATH = \$\(BUILD_PATH\)\:\$\(CURDIR\)\/debian\/path-override\:\$\{PATH\}|FULL_PATH = \$\(BUILD_PATH\)\:\$\(CURDIR\)\/debian\/path-override\:\/buildd\/sources\/droidian\/python\/2\.7\.5\/bin\:\$\{PATH\}|g"
+	CMD="sed -i "${replace_pattern}" /usr/share/linux-packaging-snippets/kernel-snippet.mk"
+	fn_cmd_on_container
+    fi
+}
+
+
 fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
@@ -468,17 +491,6 @@ fn_kernel_config_droidian() {
 	&& cp -v "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" \
 	"${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config"
 
-<< "DISABLE_FN"
-    ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
-    ## CURRENTLY not used since the Droidian packaging configures the 32 bit compiler
-    if [ "$DEVICE_MODEL" == "vayu" ]; then
-	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build eror on some devices"
-	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
-	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
-	# fn_cmd_on_container
-    fi
-DISABLE_FN
-
     ## Sow vars defined
     fn_print_vars
 }
@@ -504,6 +516,10 @@ fn_build_kernel_on_container() {
     echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #fn_patch_kernel_snippet_python275b_path
+    fn_patch_kernel_snippet_cross_32
+    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
+
     #echo "export PATH=\"/buildd/sources/droidian/python/2.7.5/bin:$PATH\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export LD_LIBRARY_PATH=\"/buildd/sources/droidian/python/2.7.5/bin\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
@@ -513,8 +529,11 @@ fn_build_kernel_on_container() {
     wget -O $KERNEL_DIR/releng-build-package-berb-edited \
 	    https://raw.githubusercontent.com/droidian-berb/berb-droidian-kernel-build-docker-mgr/release/1.0.0-3/releng-build-package-berb-edited
     ${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
+
     #echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
+
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
+
     # ask for disable install build deps in debian/kernel.mk if enabled.
     #INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
     #if [ "$INSTALL_DEPS_IS_ENABLED" -eq "1" ]; then
