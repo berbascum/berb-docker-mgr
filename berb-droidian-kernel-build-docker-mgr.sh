@@ -359,6 +359,7 @@ fn_install_apt_extra() {
 }
 
 fn_patch_kernel_snippet_cross_32() {
+# Requires "CROSS_COMPILE_32 = arm-linux-gnueabi-" on kernel-info.mk
     ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
     ## CURRENTLY not used since the Droidian packaging configures the 32 bit compiler
     if [ "$DEVICE_MODEL" == "vayu" ]; then
@@ -385,7 +386,8 @@ fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
-    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
+    # Temporary disabled 2024-05-17 ## 
+    fn_install_apt "${arr_pack_reqs[@]}"
 
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
@@ -399,10 +401,10 @@ fn_kernel_config_droidian() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
     ## Create packaging dirs if not exist
-    arr_pack_dirs=( "debian" "debian/source" "initramfs-overlay/scripts" "droidian/scripts" "droidian/common_fragments" )
-    #arr_dir_exist=()
+    arr_pack_dirs=( "debian" "debian/source" "debian/initramfs-overlay/scripts" "droidian/scripts" "droidian/common_fragments" )
+
+    ## Create droidian and debian packaging dirs
     for pack_dir in ${arr_pack_dirs[@]}; do
-	#[ -d "${pack_dir}" ] && arr_dir_exist+=( "${pack_dir}" ) || mkdir -p -v "${pack_dir}"
 	[ -d "${pack_dir}" ] || mkdir -p -v "${pack_dir}"
     done
 
@@ -440,6 +442,13 @@ fn_kernel_config_droidian() {
     kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
     [ -n "${kernel_info_mk_is_configured}" ] && abort "kernel-info.mk is unconfigured!"
 
+    ## Set Kernel Info constants
+    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
+    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk -F' = ' '{print $2}')
+    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk -F' = ' '{print $2}')
+    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
+    DEVICE_FULL_NAME=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_FULL_NAME' | awk -F' = ' '{print $2}')
+
     ## Create compat file
     if [ ! -f "${KERNEL_DIR}/debian/compat" ]; then
         echo "13" > ${KERNEL_DIR}/debian/compat
@@ -451,20 +460,15 @@ fn_kernel_config_droidian() {
     ## Create rules file
     if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
 	url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
-        wget ${KERNEL_DIR}/debian/rules ${url}
+        wget -O ${KERNEL_DIR}/debian/rules ${url}
     fi
     ## Create halium-hooks file
     if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
         url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/initramfs-overlay/scripts/halium-hooks 
-        wget ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks "${url}"
+        wget -O ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks "${url}"
+	sed -i "s/# Initramfs hooks for .*/# Initramfs hooks for ${DEVICE_FULL_NAME}/g" ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
         chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
     fi
-
-    ## Set Kernel Info constants
-    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
-    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk '{print $3}')
-    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk '{print $3}')
-    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk '{print $3}')
 
     ## Add defconf fragments
     DEFCONF_FRAGS_DIR="droidian"
@@ -517,21 +521,22 @@ fn_build_kernel_on_container() {
     echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #fn_patch_kernel_snippet_python275b_path
-    fn_patch_kernel_snippet_cross_32
-    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #fn_patch_kernel_snippet_cross_32 # Requires "CROSS_COMPILE_32 = arm-linux-gnueabi-" on kernel-info.mk
+    #echo >> $KERNEL_DIR/compile-droidian-kernel.sh
 
     #echo "export PATH=\"/buildd/sources/droidian/python/2.7.5/bin:$PATH\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export LD_LIBRARY_PATH=\"/buildd/sources/droidian/python/2.7.5/bin\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export PYTHONPATH=\"/buildd/sources/droidian/python/2.7.5/lib/python2.7\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #echo "RELENG_HOST_ARCH=\"arm64\" /buildd/sources/releng-build-package-berb-edited" >> $KERNEL_DIR/compile-droidian-kernel.sh
+    #wget -O $KERNEL_DIR/releng-build-package-berb-edited \
+	#    https://raw.githubusercontent.com/droidian-berb/berb-droidian-kernel-build-docker-mgr/release/1.0.0-3/releng-build-package-berb-edited
+    #${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
+
+    ## Releng command
     echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo "RELENG_HOST_ARCH=\"arm64\" /buildd/sources/releng-build-package-berb-edited" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    wget -O $KERNEL_DIR/releng-build-package-berb-edited \
-	    https://raw.githubusercontent.com/droidian-berb/berb-droidian-kernel-build-docker-mgr/release/1.0.0-3/releng-build-package-berb-edited
-    ${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
-
-    #echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
-
+    echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
 
     # ask for disable install build deps in debian/kernel.mk if enabled.
@@ -610,6 +615,7 @@ fn_print_vars() {
     echo "KERNEL_BUILD_OUT_LOGS_PATH = $KERNEL_BUILD_OUT_LOGS_PATH"
     echo "KERNEL_BUILD_OUT_OTHER_PATH = $KERNEL_BUILD_OUT_OTHER_PATH"
     echo "DEVICE_VENDOR = $DEVICE_VENDOR"
+    echo "DEVICE_FULL_NAME = $DEVICE_FULL_NAME"
     echo "DEVICE_MODEL = $DEVICE_MODEL"
     echo "DEVICE_ARCH = $DEVICE_ARCH"
     read -p "Continue..."
