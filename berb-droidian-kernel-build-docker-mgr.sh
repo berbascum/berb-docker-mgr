@@ -695,7 +695,7 @@ echo
 
 ## Execute action on container name
 if [ "$ACTION" == "create" ]; then
-´   fn_create_container
+    fn_create_container
 elif [ "$ACTION" == "remove" ]; then
     fn_remove_container
 elif [ "$ACTION" == "start" ]; then
