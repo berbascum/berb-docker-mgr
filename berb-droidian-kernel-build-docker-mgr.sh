@@ -148,10 +148,10 @@ fn_ip_forward_activa() {
 ######################
 fn_docker_global_config() {
     ## Docker constants
-    CONTAINER_BASE_NAME="droidian-build-env-${kernel_device}"
+    CONTAINER_BASE_NAME="droidian-build-env-${KERNEL_NAME}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG='trixie-amd64'
-    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${kernel_device}"
+    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${KERNEL_NAME}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG='trixie-amd64'
 
@@ -192,7 +192,12 @@ fn_docker_global_config() {
 fn_create_container() {
 # Creates the container
     echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
+    read -p "Pausa..."
+
     CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
+    img_commited_exist=$(${SUDO} docker images | grep ${IMAGE_COMMIT_NAME})
+    [ -n "${img_commited_exist}" ] && IMAGE_NAME="${IMAGE_COMMIT_NAME}" && IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
+
     if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
 	echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
 	$SUDO docker -v create --name ${CONTAINER_NAME} -v $PACKAGES_DIR:/buildd \
@@ -325,7 +330,7 @@ fn_build_env_base_paths_config() {
     export KERNEL_DIR="${START_DIR}"
     # Set KERNEL_NAME to current dir name
     KERNEL_NAME=$(basename ${START_DIR})
-    kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
+    #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
     export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
     ## Set kernel build output paths
     KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
@@ -335,7 +340,7 @@ fn_build_env_base_paths_config() {
     KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
     ## Create kernel build output dirs
     # [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
-    [ -d "$PACKAGES_DIR" ] || -v mkdir $PACKAGES_DIR
+    [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
     [ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
     [ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
     [ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
@@ -386,8 +391,7 @@ fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
-    # Temporary disabled 2024-05-17 ## 
-    fn_install_apt "${arr_pack_reqs[@]}"
+    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
 
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
