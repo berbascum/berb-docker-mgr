@@ -199,6 +199,11 @@ fn_docker_global_config() {
     abort "An error occourred setting the CONTAINER_NAME var!"
 }
 
+fn_docker_multiarch_enable() {
+	## Enable multiarch in docker as suggested in the official porting guide
+	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+}
+
 fn_create_container() {
 # Creates the container
     echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
@@ -267,6 +272,10 @@ fn_remove_container() {
 fn_start_container() {
     IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
     if [ "$IS_STARTED" -eq "0" ]; then
+	## Ask for enable multiarch support
+	ask "Want to start the docker multiarch compat? [ y|n ]: "
+	[ "${answer}" == "y" ] && fn_docker_multiarch_enable
+	## Start the container
         info "Starting container ${CONTAINER_NAME}"
 	docker start $CONTAINER_NAME
     fi
@@ -429,6 +438,7 @@ fn_docker_config_standard_pkg_source() {
     #
     #
     #
+    AQUI
     #
     #
     OUTPUT_FULLPATH="${SOURCES_PATH}/out-${package_name}-${package_version}"
@@ -439,6 +449,10 @@ fn_docker_config_standard_pkg_source() {
     [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
 }
 
+fn_check_for_droidian_build_tools() {
+	echo "TODO"
+	# AQUI
+}
 fn_docker_config_droidian_adapt_source() {
 ## The build adaptation process consists on thre  parts:
 # config: (outside docker) The adaptation scripts are used to configure the build env
@@ -662,15 +676,19 @@ fn_kernel_config_droidian() {
     fn_print_vars
 }
 
-fn_check_for_droidian_build_tools() {
-	echo "TODO"
-	# AQUI
-}
 fn_build_package_on_container() {
+AQUI
 
-## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
+    # Script creation to launch compilation inside the container.
+    echo '#!/bin/bash' > $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo "RELENG_FULL_BUILD=yes RELENG_HOST_ARCH=${host_arch} releng-build-package" \
+	    >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
 
-#$CHANGES: a "droidian-build tools": Es denineixen els Source i Version que conté arxiu
 
 
 ## Recreate the systemd wants links on the sparse directory
@@ -697,8 +715,6 @@ build_adaptation_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vend
     && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
 [ -L "${build_adaptation_fullpath}" ] && rm "${build_adaptation_fullpath}" \
     && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
-## Enable multiarch in docker as suggested in the official porting guide
-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 ## Build the adaptation packages
 ## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
@@ -706,12 +722,7 @@ cd ${build_adaptation_fullpath} && ${build_tools_droidian_fullpath}/droidian-bui
 cd ${START_DIR}
 
 
-    # Script creation to launch compilation inside the container.
-    echo '#!/bin/bash' > $KERNEL_DIR/compile-package.with-driodian-releng.sh
-    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
-#     -e RELENG_FULL_BUILD=yes \
-#     -e RELENG_HOST_ARCH="${DEST_ARCH}" /bin/sh \
-#     -c 'cd /buildd/sources && releng-build-package'
+
 }
 
 fn_build_kernel_on_container() {
@@ -750,7 +761,7 @@ fn_build_kernel_on_container() {
 
     ## Releng command
     echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'RELENG_HOST_ARCH="arm64" releng-build-package' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo "RELENG_HOST_ARCH=${host_arch} releng-build-package" >> $KERNEL_DIR/compile-droidian-kernel.sh
     ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
 
     # ask for disable install build deps in debian/kernel.mk if enabled.
