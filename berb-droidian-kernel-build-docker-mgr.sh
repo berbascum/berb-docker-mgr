@@ -4,7 +4,7 @@
 # Source: https://gitlab.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
   ## Script that manages a custom docker container with Droidian build environment
 
-# Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
+# Copyright (C) 2022 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
 
 # BSD 3-Clause License
@@ -99,6 +99,17 @@ abort() {
     exit 1
 }
 
+info() {
+    echo; echo "$*"
+}
+
+ask() {
+    echo; read -p "$*" answer
+}
+
+pause() {
+    echo; read -p "$*"
+}
 missatge() {
     echo; echo "$*"
 }
@@ -148,12 +159,12 @@ fn_ip_forward_activa() {
 ######################
 fn_docker_global_config() {
     ## Docker constants
-    CONTAINER_BASE_NAME="droidian-build-env-${KERNEL_NAME}"
+    CONTAINER_BASE_NAME="droidian-build-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
-    IMAGE_BASE_TAG='trixie-amd64'
-    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${KERNEL_NAME}"
+    IMAGE_BASE_TAG="${droidian_suite}-${host_arch}"
+    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${package_name}"
     IMAGE_COMMIT_NAME='berb/build-essential'
-    IMAGE_COMMIT_TAG='trixie-amd64'
+    IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
 
     ## If no docker images found, set default config
     docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
@@ -186,7 +197,6 @@ fn_docker_global_config() {
     fi
 
     abort "An error occourred setting the CONTAINER_NAME var!"
-
 }
 
 fn_create_container() {
@@ -194,24 +204,50 @@ fn_create_container() {
     echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
     read -p "Pausa..."
 
-    CONTAINER_EXISTS=$(${SUDO} docker ps -a | grep -c ${CONTAINER_NAME})
-    img_commited_exist=$(${SUDO} docker images | grep ${IMAGE_COMMIT_NAME})
+    CONTAINER_EXISTS=$(docker ps -a | grep -c ${CONTAINER_NAME})
+    img_commited_exist=$(docker images | grep ${IMAGE_COMMIT_NAME})
     [ -n "${img_commited_exist}" ] && IMAGE_NAME="${IMAGE_COMMIT_NAME}" && IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 
     if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
-	echo; echo "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}\" image..." 
-	$SUDO docker -v create --name ${CONTAINER_NAME} -v $PACKAGES_DIR:/buildd \
-	    -v $KERNEL_DIR:/buildd/sources -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
-	echo && echo "Container created!"
+        info "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}:${IMAGE_TAG}\" img..." 
+	if [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
+	    docker -v create --name ${CONTAINER_NAME} \
+	        -v ${buildd_fullpath}:/buildd \
+		-v ${buildd_sources_fullpath}:/buildd/sources \
+		-v ${buildd_local_repo_fullpath}:/buildd/local-repo \
+	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+	elif [[ "${docker_mode}" == "kernel" \
+		|| ("${docker_mode}" == "package" && "${pkg_type}" == "standard_pkg") ]] ; then
+	    docker -v create --name ${CONTAINER_NAME} \
+		-v ${buildd_fullpath}:/buildd \
+		-v ${buildd_sources_fullpath}:/buildd/sources \
+	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+	else
+	    abort "Docker mode not implemented"
+	fi
+	## Ask to start container
+	ask "Want to start the container? [ y|n ]: "
+	[ "${answer}" == "y" ] && start_cont="True" && fn_start_container
+	#Ask to install required apt packages
+	[ "${start_cont}" == "True" ] && ask "Want to install the required apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] && req_inst="True" && fn_install_apt_req
+	#Ask to install basic apt packages
+	[ "${req_inst}" == "True" ] && ask "Want to install the basic apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] && base_inst="True" && fn_install_apt_base
+	#Ask to install extra apt packages
+	[ "${base_inst}" == "True" ] && ask "Want to install the extra apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] && fn_install_apt_extra
+
+	info "Container created!"
     else
-	echo && echo "Container already exists!" && exit 4
+	info "Container already exists!" && exit 4
     fi
 }
 
 fn_remove_container() {
     # Removes a the container
-    CONTAINER_EXIST=$(${SUDO} docker ps -a | grep -c "$CONTAINER_NAME")
- 	CONTAINER_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    CONTAINER_EXIST=$(docker ps -a | grep -c "$CONTAINER_NAME")
+ 	CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
     if [ "$CONTAINER_EXIST" -eq '0' ]; then
 	echo && echo "Container $CONTAINER_NAME not exists..."
 	echo
@@ -221,7 +257,7 @@ fn_remove_container() {
     if [ "$RM_CONT" == "yes" ]; then
  	echo && echo "Removing container..."
 	fn_stop_container
-	${SUDO} docker rm $CONTAINER_ID
+	docker rm $CONTAINER_ID
     else
 	echo && echo "Container $CONTAINER_NAME will NOT be removed as user choice"
 	echo
@@ -229,19 +265,21 @@ fn_remove_container() {
 }
 
 fn_start_container() {
-    IS_STARTED=$(${SUDO} docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
+    IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
     if [ "$IS_STARTED" -eq "0" ]; then
-	$SUDO docker start $CONTAINER_NAME
+        info "Starting container ${CONTAINER_NAME}"
+	docker start $CONTAINER_NAME
     fi
 }
 
 fn_stop_container() {
-    ${SUDO} docker stop $CONTAINER_NAME
+    info "Stopping container ${CONTAINER_NAME}"
+    docker stop ${CONTAINER_NAME}
 }
 
 fn_get_default_container_id() {
     # Search for original container id
-    DEFAULT_CONT_ID=$(${SUDO} docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    DEFAULT_CONT_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 }
 
 fn_commit_container() {
@@ -256,14 +294,14 @@ fn_commit_container() {
 
     ## Check if a container from a commited image exist. Case exist, create a new commit from commited container
     ## Otherwise create a commit from the base container.
-    container_exist=$(${SUDO} docker ps -a | grep ${CONTAINER_COMMITED_NAME})
+    container_exist=$(docker ps -a | grep ${CONTAINER_COMMITED_NAME})
     if [ -n "${container_exist}" ]; then
         # Commit creation
         echo && echo "Creating another committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_COMMITED_NAME}\" container..."
         echo "Please be patient!!!"
-        ${SUDO} docker commit "${CONTAINER_COMMITED_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
-        ${SUDO} docker stop "${CONTAINER_COMMITED_NAME}"
-        ${SUDO} docker rm "${CONTAINER_COMMITED_NAME}"
+        docker commit "${CONTAINER_COMMITED_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
+        docker stop "${CONTAINER_COMMITED_NAME}"
+        docker rm "${CONTAINER_COMMITED_NAME}"
 	# Create new container from commit image.
 	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
@@ -276,7 +314,7 @@ fn_commit_container() {
         # Commit creation
         echo && echo "Creating the first committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_BASE_NAME}\" container..."
         echo "Please be patient!!!"
-        ${SUDO} docker commit "${CONTAINER_BASE_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
+        docker commit "${CONTAINER_BASE_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
 	# Create new container from commit image.
 	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
@@ -289,19 +327,19 @@ fn_commit_container() {
 }
 
 fn_shell_to_container() {
-    ${SUDO} docker exec -it $CONTAINER_NAME bash --login
+    docker exec -it $CONTAINER_NAME bash --login
 }
 
 fn_cmd_on_container() {
-    ${SUDO} docker exec -it ${CONTAINER_NAME} ${CMD}
+    docker exec -it ${CONTAINER_NAME} ${CMD}
 }
 
 fn_cp_to_container() {
-    ${SUDO} docker cp ${copy_src} ${CONTAINER_NAME}:${copy_dst}
+    docker cp ${copy_src} ${CONTAINER_NAME}:${copy_dst}
 }
 
 fn_cp_from_container() {
-    ${SUDO} docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
+    docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
 }
 
 fn_install_apt() {
@@ -318,20 +356,140 @@ fn_install_apt() {
 ############################
 ## Kernel build functions ##
 ############################
+fn_dir_is_git() {
+    ## Abort if no .git directori found
+    [ ! -d ".git" ] && abort "The current dir should be a git repo!"
+}
+
+fn_device_info_load() {
+    ## Load device info vars
+    [ ! -f "device_info" ] && abort "The device_info file is required!"
+    source device_info
+}
+
 fn_build_env_base_paths_config() {
+	## Save start fullpath
     START_DIR=$(pwd)
     # Cerca un aerxiu README de linux kernel
-    [ ! -e "$START_DIR/README" ] && abort "README file not found. Please exec th script from the git kernel dir"
-    IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-    [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
+    if [ -e "$START_DIR/README" ]; then
+	## check for git dir
+	fn_dir_is_git # Aborts if not
+	## Check if is kernel
+        IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
+        [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
+	info "Kernel source dir detected!"
+	docker_mode="kernel"
+
+	## Call kernel source config
+	fn_docker_config_kernel_source
+    elif [ -e "${START_DIR}/sparse" ]; then
+        ## check for git dir
+        fn_dir_is_git # Aborts if not
+	## Check for debian control
+	[ ! -f "debian/control" ] && abort "debian control file not found!"
+	## Set docker mode
+	docker_mode="package"
+
+	## Get the package type
+	pkg_type=""
+	[ -z "${pkg_type}" ] \
+		&& [ -n "$(echo "${package_name}" | grep "^adaptation")" ] && pkg_type="droidian_adapt"
+	[ -z "${pkg_type}" ] \
+		&& pkg_type="standard_pkg"
+	[ -z "${pkg_type}" ] \
+		&& abort "Not supported sparse dir detected!"
+
+	## Call droidian build tools configurer for packages
+	fn_docker_config_droidian_build_tools_package
+    else
+        abort "Not supported package dir found!"
+    fi
+}
+
+fn_docker_config_droidian_build_tools_package() {
+    APT_INSTALL_EXTRA="releng-tools"
+    
+    ## Load device_info vars
+    fn_device_info_load
+
+    # Set package paths
+    SOURCES_FULLPATH="${START_DIR}"
+    ## Get the package name from debian control
+    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
+
+    # Get package dirname as current dir name
+    pkg_dirname=$(basename ${SOURCES_FULLPATH})
+
+    ## Call configurer for the detected package type
+    fn_docker_config_${pkg_type}_source
+}
+
+fn_docker_config_standard_pkg_source() {
+    ## TODO implement package_version var
+    #
+    #
+    #
+    #
+    #
+    OUTPUT_FULLPATH="${SOURCES_PATH}/out-${package_name}-${package_version}"
+    PACKAGES_DIR="${OUTPUT_FULLPATH}"
+    buildd_fullpath="${PACKAGES_DIR}" 
+    buildd_sources_fullpath="${SOURCES_FULLPATH}"
+    ## Create the output dir
+    [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
+}
+
+fn_docker_config_droidian_adapt_source() {
+## The build adaptation process consists on thre  parts:
+# config: (outside docker) The adaptation scripts are used to configure the build env
+ # build: (on docker) execute releng-build-package on a container
+ # sign: (outside docker) droidian-build-tools script signs the packages
+ # recipes creation: src/build-tools/image.sh found on:
+   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian
+ # debs creation: found on:
+   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian/apt
+    #
+    # Set package paths
+    droidian_build_tools_fullpath="${START_DIR}/droidian-build-tools/bin"
+    adapt_droidian_template_relpath="droidian"
+    package_relpath="droidian/${vendor}/${codename}/packages/adaptation-${vendor}-${codename}"
+    adapt_droidian_apt_reldir="droidian/${vendor}/${codename}/droidian/apt"
+    ## Set paths for docker
+    PACKAGE_DIR="${droidian_build_tools_fullpath}/${package_relpath}"
+    RESULT_DIR="$(mktemp)"
+    LOCAL_REPO_DIR="${droidian_build_tools_fullpath}/${adapt_droidian_apt_reldir}"
+    ## Set dirs to mount on the docker container
+    buildd_fullpath="${RESULT_DIR}" 
+    buildd_sources_fullpath="${PACKAGE_DIR}"
+    buildd_local_repo_fullpath="${LOCAL_REPO_DIR}"
+
+#AQUI
+
+}
+
+fn_docker_config_kernel_source() {
+    APT_INSTALL_EXTRA=" \
+        bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
+        linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64 \
+        linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps \
+        mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2 \
+        gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android \
+        libgcc-4.9-dev-aarch64-linux-android-cross \
+        binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu"
+       #clang-android-6.0-4691093 clang-android-10.0-r370808 \
     # Set SOURCES_PATH to parent kernel dir
     SOURCES_PATH="$(dirname ${START_DIR})"
     ## get kernel info
     export KERNEL_DIR="${START_DIR}"
     # Set KERNEL_NAME to current dir name
-    KERNEL_NAME=$(basename ${START_DIR})
+    pkg_dirname=$(basename ${START_DIR})
+    package_name=${pkg_dirname}
+    KERNEL_NAME="${package_name}"
     #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
     export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+    ## Set dirs to mount on the docker container
+    buildd_fullpath="${$PACKAGES_DIR}" 
+    buildd_sources_fullpath="${KERNEL_DIR}"
     ## Set kernel build output paths
     KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
     KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
@@ -345,21 +503,22 @@ fn_build_env_base_paths_config() {
     [ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
     [ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
     [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
-
     ## Backups info
     BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 }
-fn_install_apt_extra() {
-    APT_INSTALL_EXTRA="net-tools vim locate git device-tree-compiler, linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, clang-android-10.0-r370808, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps"
-   # bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2"
-    #linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64
-    #mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2"
-    #clang-android-6.0-4691093 clang-android-10.0-r370808
-    #gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android
-    #libgcc-4.9-dev-aarch64-linux-android-cross
-    #binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu
-    #python2.7 python2.7-minimal libpython2.7-minimal libpython2.7-stdlib \
 
+fn_install_apt_req() {
+    APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
+    fn_install_apt "${APT_INSTALL_REQ}"
+}
+
+fn_install_apt_base() {
+    APT_INSTALL_BASE="vim git wget less bash-completion rsync net-tools"
+    fn_install_apt "${APT_INSTALL_BASE}"
+}
+
+fn_install_apt_extra() {
+    ## APT_INSTALL_EXTRA is defined on the pachage type (kernel, package, etc) docker config sections
     fn_install_apt "${APT_INSTALL_EXTRA}"
 }
 
@@ -503,11 +662,62 @@ fn_kernel_config_droidian() {
     fn_print_vars
 }
 
+fn_check_for_droidian_build_tools() {
+	echo "TODO"
+	# AQUI
+}
+fn_build_package_on_container() {
+
+## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
+
+#$CHANGES: a "droidian-build tools": Es denineixen els Source i Version que conté arxiu
+
+
+## Recreate the systemd wants links on the sparse directory
+#[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
+#./create-services-links.sh
+
+## Global config
+bkp_private_filename="backup-droidian-private-gpg-apt-${vendor}-${codename}.tar.gz"
+bkp_template_filename="backup-droidian-adaptation-fresh-template-${vendor}-${codename}.tar.gz"
+bkp_adapt_git_repo_filename="backup-droidian-adaptation-git-repo-${vendor}-${codename}.tar.gz"
+build_tools_droidian_fullpath="${START_DIR}/droidian-build-tools/bin"
+build_tools_src_fullpath="${START_DIR}/droidian-build-tools/bin/src/build-tools"
+build_private_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vendor}/${codename}/private"
+build_adaptation_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vendor}/${codename}/packages/adaptation-${vendor}-${codename}"
+
+## Extract the full droidian-build-package with the template
+[ ! -f "${bkp_template_filename}" ] && abort "Build template ${bkp_template_filename} not found!"
+[ ! -d "${START_DIR}/droidian-build-tools" ] && cd ${START_DIR} && tar zxf "${bkp_template_filename}"
+## Update the suite to trixie on droidian-build-tools
+#sed -i 's/bookworm/trixie/g' ${build_tools_src_fullpath}/common.sh
+
+## create link to the adaptation git repo on the droidian-build-tools structure
+[ -d "${build_adaptation_fullpath}" ] && mv ${build_adaptation_fullpath} ${build_adaptation_fullpath}_bkp \
+    && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
+[ -L "${build_adaptation_fullpath}" ] && rm "${build_adaptation_fullpath}" \
+    && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
+## Enable multiarch in docker as suggested in the official porting guide
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+## Build the adaptation packages
+## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
+cd ${build_adaptation_fullpath} && ${build_tools_droidian_fullpath}/droidian-build-package -b amd64
+cd ${START_DIR}
+
+
+    # Script creation to launch compilation inside the container.
+    echo '#!/bin/bash' > $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+#     -e RELENG_FULL_BUILD=yes \
+#     -e RELENG_HOST_ARCH="${DEST_ARCH}" /bin/sh \
+#     -c 'cd /buildd/sources && releng-build-package'
+}
+
 fn_build_kernel_on_container() {
     ## Call droidian kernel configuration function
     fn_kernel_config_droidian
 
-    [ -d "$PACKAGES_DIR" ] || mkdir $PACKAGES_DIR
     # Script creation to launch compilation inside the container.
     echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
     echo >> $KERNEL_DIR/compile-droidian-kernel.sh
@@ -554,7 +764,7 @@ fn_build_kernel_on_container() {
     #	esac
     #fi
     
-    ${SUDO} docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
     echo; echo "Compilation finished."
 
     # fn_create_outputs_backup

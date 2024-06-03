@@ -1,0 +1,15 @@
+Source: berb-droidian-kernel-build-docker-mgr
+Maintainer: berbascum
+Section: utils
+Priority: optional
+Build-Depends: debhelper (>= 10),
+               debhelper-compat (= 13),
+Standards-Version: 4.5.0.3
+
+Package: berb-droidian-kernel-build-docker-mgr
+Architecture: all
+Depends: ${misc:Depends},
+         docker.io,
+	 wget,
+	 
+Description: Script to manage containers to build packages using the official Droidian build tools
