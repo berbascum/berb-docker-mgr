@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Upstream-Name: berb-droidian-kernel-build-docker-mgr
-# Source: https://gitlab.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
-  ## Script that manages a custom docker container with Droidian build environment
+# Upstream-Name: berb-droidian-build-docker-mgr
+# Source: https://gitlab.com/droidian-berb/berb-droidian-build-docker-mgr
+  ## Script to manage docker containers to build packages and kernels with the Droidian releng-tools
 
 # Copyright (C) 2022 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
@@ -36,13 +36,10 @@
 #################
 ## Header vars ##
 #################
-TOOL_NAME="berb-droidian-kernel-build-docker-mgr"
-TOOL_VERSION="1.0.0.3"
-TOOL_BRANCh="release/${TOOL_VERSION}"
+#TOOL_VERSION="1.0.0.3"
+#TOOL_CHANNEL="develop"
 TESTED_BASH_VER='5.2.15'
 
-# Not used yet by this script:
-# VERSIO_SCRIPTS_SHARED_FUNCS="0.2.1"
 
 ######################
 ## Global functions ##

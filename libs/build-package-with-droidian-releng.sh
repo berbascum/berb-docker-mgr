@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Upstream-Name: berb-droidian-kernel-build-docker-mgr
-# Source: https://github.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
+# Upstream-Name: berb-droidian-build-docker-mgr
+# Source: https://github.com/droidian-berb/berb-droidian-build-docker-mgr
   ## Script to configure a debian package to be builded with the droidian releng-tools
 
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
