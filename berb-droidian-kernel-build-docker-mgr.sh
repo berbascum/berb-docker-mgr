@@ -32,49 +32,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-################
-## Changelog: ##
-################
-  # To do:
-    # Add cmd params support
-    # Before compiling, script asks for remove out dir?
-
-  # v_1.0.0-3: name changed from "droidian-manage-docker-container to "berb-droidian-kernel-build-docker-mgr"
-    # New: fn_configura_sudo
-    # New: fn_build_env_base_paths_config
-    # New: Implemented kernel path auto detection
-    # New: Implemented multiple container with different mounted kernel sources
-    # New: Basic check to determine if the start dir is a kernel source root dir and a git repo too.
-    # New: fn_create_outputs_backup: NOT DONE: After compilation, script archives most output relevant files and archive them to tar.gz
-    # New: fn_remove_container
-    # New Check the minimal recomended bash version"
-
-  # v_0.0.2-1
-    # New: fn_ip_forward_activa
-
-  # v_0.0.2
-    # Added build-kernel-on-container feature 
-      # Before compiling, script asks for remove out dir.
-    # Added feature to enable/disable download build deps in kernel-info.mk
-    # Improvements and bug fixes  in commit_container function.
-    # Improvements in commit_container function.
-    
-  # v_0.0.1
-   # Features:
-    # Create container: Create container from docker image:
-      # quay.io/droidian/build-essential:bookworm-amd64
-    # Basic container management
-    # Open a bash shell inside container
-    # Commit container:
-      # Creates a new image with custom modifications, and 
-      # Then creates a new container from it.
-      # Only one commit is implemented.
-    # Install build env dependences with apt-get
-    # Custom configurations on container: To do.
-
-  # v_0.0.0
-    # Starting version. Just create a conbtainer from Droidian build-essential image.
-    
 
 #################
 ## Header vars ##
