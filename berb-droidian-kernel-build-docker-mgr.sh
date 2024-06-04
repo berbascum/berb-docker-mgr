@@ -79,8 +79,8 @@
 #################
 ## Header vars ##
 #################
-TOOL_NAME='berb-droidian-kernel-build-docker-mgr'
-TOOL_VERSION='1.0.0.3'
+TOOL_NAME="berb-droidian-kernel-build-docker-mgr"
+TOOL_VERSION="1.0.0.3"
 TOOL_BRANCh="release/${TOOL_VERSION}"
 TESTED_BASH_VER='5.2.15'
 
@@ -687,20 +687,41 @@ fn_build_package_on_container() {
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'chmod +x /buildd/sources/debian/rules' >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'cd /buildd/sources' >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Add more tag prefixes" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "sed -i 's|tag_prefixes=(\"droidian/.*),|tag_prefixes=(\"droidian/\",\"stable/\",\"release/\",),|g'" \
-         /usr/lib/releng-tools/build_changelog.py >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    #echo "## Restore releng-tools scripts" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    #echo "apt-get --reinstall install releng-tools -y" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #echo "## Add more tag prefixes" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #echo "sed -i 's|tag_prefixes=(\"droidian/.*),|tag_prefixes=(\"droidian/\",\"stable/\",\"release/\",),|g'" \
+    #
+    ## Get the package version from the script whose name is the packqge name
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo >> "## Call releng"${SOURCES_FULLPATH}/${build_script_name}
+    echo "package_version=\"\$(cat ${package_name}.sh | grep \"^TOOL_VERSION\" | awk -F'=' '{print \$2}' | sed 's/\"//g')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Patch releng-build-changelog to set the package version externally
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "sed -i \"s|starting_version = strategy()|starting_version = \"\$comes\${package_version}\$comes\" #RESTORE|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Call releng to build package
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Call releng" >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "RELENG_FULL_BUILD=yes RELENG_HOST_ARCH=${host_arch} releng-build-package" \
-	    >>${SOURCES_FULLPATH}/${build_script_name}
+	    >> ${SOURCES_FULLPATH}/${build_script_name}
     #RELENG_TAG_PREFIX=stable/  RELENG_BRANCH_PREFIX
-    
+    #
+    ## Restore the externally forced version on releng-buils-changelog
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "sed -i \"s|starting_version = .*RESTORE|starting_version = strategy()|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Add x perms to the compiler script
     chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
-    #docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
-    missatge "Docker command is disabled for testing!"
+    #
+    ## Build package on container
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
+    #missatge "Docker command is disabled for testing!"
 
-    info "Compilation finished."
+    info "Build package finished."
 
 
 << "ADAPTATION_IN_DEVELOPMENT"
