@@ -441,7 +441,7 @@ fn_docker_config_standard_pkg_source() {
     AQUI
     #
     #
-    OUTPUT_FULLPATH="${SOURCES_PATH}/out-${package_name}-${package_version}"
+    OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}-${package_version}"
     PACKAGES_DIR="${OUTPUT_FULLPATH}"
     buildd_fullpath="${PACKAGES_DIR}" 
     buildd_sources_fullpath="${SOURCES_FULLPATH}"
@@ -491,8 +491,8 @@ fn_docker_config_kernel_source() {
         libgcc-4.9-dev-aarch64-linux-android-cross \
         binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu"
        #clang-android-6.0-4691093 clang-android-10.0-r370808 \
-    # Set SOURCES_PATH to parent kernel dir
-    SOURCES_PATH="$(dirname ${START_DIR})"
+    # Set SOURCES_FULLPATH to parent kernel dir
+    SOURCES_FULLPATH="$(dirname ${START_DIR})"
     ## get kernel info
     export KERNEL_DIR="${START_DIR}"
     # Set KERNEL_NAME to current dir name
@@ -500,7 +500,7 @@ fn_docker_config_kernel_source() {
     package_name=${pkg_dirname}
     KERNEL_NAME="${package_name}"
     #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
-    export PACKAGES_DIR="$SOURCES_PATH/out-$KERNEL_NAME"
+    export PACKAGES_DIR="$SOURCES_FULLPATH/out-$KERNEL_NAME"
     ## Set dirs to mount on the docker container
     buildd_fullpath="${$PACKAGES_DIR}" 
     buildd_sources_fullpath="${KERNEL_DIR}"
@@ -677,23 +677,30 @@ fn_kernel_config_droidian() {
 }
 
 fn_build_package_on_container() {
-AQUI
+    ## TODO Recreate the systemd wants links on the sparse directory
+    #[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
+    #./create-services-links.sh
 
     # Script creation to launch compilation inside the container.
-    echo '#!/bin/bash' > $KERNEL_DIR/compile-package.with-driodian-releng.sh
-    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
-    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
-    echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
-    echo >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+    build_script_name="compile-package.with-droidian-releng.sh"
+    echo '#!/bin/bash' > ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo 'chmod +x /buildd/sources/debian/rules' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo 'cd /buildd/sources' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "RELENG_FULL_BUILD=yes RELENG_HOST_ARCH=${host_arch} releng-build-package" \
-	    >> $KERNEL_DIR/compile-package.with-driodian-releng.sh
+	    >> ${SOURCES_FULLPATH}/${build_script_name}
+    ${SUDO} chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
+    #docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
+    missatge "Docker command is disabled for testing!"
+
+    info "Compilation finished."
 
 
+<< "ADAPTATION_IN_DEVELOPMENT"
+AQUI
 
-## Recreate the systemd wants links on the sparse directory
-#[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
-#./create-services-links.sh
 
 ## Global config
 bkp_private_filename="backup-droidian-private-gpg-apt-${vendor}-${codename}.tar.gz"
@@ -720,8 +727,7 @@ build_adaptation_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vend
 ## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
 cd ${build_adaptation_fullpath} && ${build_tools_droidian_fullpath}/droidian-build-package -b amd64
 cd ${START_DIR}
-
-
+ADAPTATION_IN_DEVELOPMENT
 
 }
 
@@ -730,8 +736,9 @@ fn_build_kernel_on_container() {
     fn_kernel_config_droidian
 
     # Script creation to launch compilation inside the container.
-    echo '#!/bin/bash' > $KERNEL_DIR/compile-droidian-kernel.sh
-    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
+    build_script_name="compile-droidian-kernel.sh"
+    echo '#!/bin/bash' > $KERNEL_DIR/${build_script_name}
+    echo >> $KERNEL_DIR/${build_script_name}
     #echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
@@ -740,10 +747,10 @@ fn_build_kernel_on_container() {
     #echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
     #echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'cd /buildd/sources' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'rm -f debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'debian/rules debian/control' >> $KERNEL_DIR/compile-droidian-kernel.sh
+    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/${build_script_name}
+    echo 'cd /buildd/sources' >> $KERNEL_DIR/${build_script_name}
+    echo 'rm -f debian/control' >> $KERNEL_DIR/${build_script_name}
+    echo 'debian/rules debian/control' >> $KERNEL_DIR/${build_script_name}
     #echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
     #fn_patch_kernel_snippet_python275b_path
     #fn_patch_kernel_snippet_cross_32 # Requires "CROSS_COMPILE_32 = arm-linux-gnueabi-" on kernel-info.mk
@@ -760,9 +767,9 @@ fn_build_kernel_on_container() {
     #${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
 
     ## Releng command
-    echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo "RELENG_HOST_ARCH=${host_arch} releng-build-package" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    ${SUDO} chmod u+x $KERNEL_DIR/compile-droidian-kernel.sh
+    echo >> $KERNEL_DIR/${build_script_name}
+    echo "RELENG_HOST_ARCH=${host_arch} releng-build-package" >> $KERNEL_DIR/${build_script_name}
+    ${SUDO} chmod u+x $KERNEL_DIR/${build_script_name}
 
     # ask for disable install build deps in debian/kernel.mk if enabled.
     #INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
@@ -774,7 +781,6 @@ fn_build_kernel_on_container() {
     #			;;
     #	esac
     #fi
-    
     docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
     echo; echo "Compilation finished."
 
@@ -815,7 +821,7 @@ fn_create_outputs_backup() {
     done
     ## Make a tar.gz from PACKAGES_DIR
     echo && echo "Creating $BACKUP_FILE_NOM from $PACKAGES_DIR"
-    cd $SOURCES_PATH
+    cd $SOURCES_FULLPATH
     tar zcvf $BACKUP_FILE_NOM $PACKAGES_DIR
     if [ "$?" -eq '0' ]; then
  	echo && echo "Backup $BACKUP_FILE_NOM created on the parent dir"
@@ -864,7 +870,8 @@ fn_action_prompt() {
     #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
     echo; echo "10 - Build kernel on container"
     echo; echo "11 - Configure a Droidian kernel (android kernel)"
-    echo; echo "12 - Backup kernel build output relevant files"
+    echo; echo "12 - Build package on container"
+    echo; echo "20 - Backup kernel build output relevant files"
     echo; read -p "Select an option: " OPTION
     case $OPTION in
 	1)
@@ -901,6 +908,9 @@ fn_action_prompt() {
 	    ACTION="config-droidian-kernel"
 	    ;;
 	12)
+	    ACTION="build-package-on-container"
+	    ;;
+	20)
 	    ACTION="create-outputs-backup"
 	    ;;
 	*)
@@ -947,6 +957,8 @@ elif [ "$ACTION" == "commit-container" ]; then
     fn_commit_container
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
     fn_build_kernel_on_container
+elif [ "$ACTION" == "build-package-on-container" ]; then
+    fn_build_package_on_container
 elif [ "$ACTION" == "create-outputs-backup" ]; then
     fn_create_outputs_backup
 else
