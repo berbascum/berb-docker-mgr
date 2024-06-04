@@ -693,7 +693,7 @@ fn_build_package_on_container() {
     #./create-services-links.sh
 
     # Script creation to launch compilation inside the container.
-    build_script_name="compile-package.with-droidian-releng.sh"
+    build_script_name="build-package-with-droidian-releng.sh"
     echo '#!/bin/bash' > ${SOURCES_FULLPATH}/${build_script_name}
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'chmod +x /buildd/sources/debian/rules' >> ${SOURCES_FULLPATH}/${build_script_name}
@@ -709,10 +709,21 @@ fn_build_package_on_container() {
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "package_version=\"\$(cat ${package_name}.sh | grep \"^TOOL_VERSION\" | awk -F'=' '{print \$2}' | sed 's/\"//g')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
-    ## Patch releng-build-changelog to set the package version externally
+    ## Get the package dist channel from the script whose name is the packqge name
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "package_dist_channel=\"\$(git tag --contains "HEAD" | awk -F'/' '{print \$1}')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Patch releng-build-changelog to set the package version externally from last tag
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Patch starting_version on releng-build-changelog with the last tag value" >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "sed -i \"s|starting_version = strategy()|starting_version = \"\$comes\${package_version}\$comes\" #RESTORE|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Patch releng-build-changelog to set the package version_comment externally from last tag
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Patch self.comment on releng-build-changelog with the last tag value" >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "sed -i \"s|self.comment = slugify(comment.replace(self.branch_prefix,.*|self.comment = \"\$comes\${package_dist_channel}\$comes\" #RESTORE|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
     ## Call releng to build package
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
@@ -723,10 +734,17 @@ fn_build_package_on_container() {
     #
     ## Restore the externally forced version on releng-buils-changelog
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Restore patched startin_version on releng-build-changelog" >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "sed -i \"s|starting_version = .*RESTORE|starting_version = strategy()|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
     ## Add x perms to the compiler script
     chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
+    #
+    ## Restore releng-build-changelog to set the package version_comment externally from last tag
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Restore patched self.comment on releng-build-changelog" >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "sed -i \"s|self.comment = .*RESTORE|self.comment = slugify(comment.replace(self.branch_prefix, \$comes\$comes))|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
