@@ -389,8 +389,9 @@ fn_git_get_pkg_name_version_from_tag() {
 
 fn_device_info_load() {
     ## Load device info vars
-    [ ! -f "device_info" ] && abort "The device_info file is required!"
-    source device_info
+    device_info_filename="/usr/lib/${package_name}/device_info.sh"
+    [ ! -f "${device_info_filename}" ] && abort "The device_info file is required!"
+    source "${device_info_filename}"
 }
 
 fn_build_env_base_paths_config() {
