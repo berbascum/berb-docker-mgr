@@ -11,5 +11,4 @@ Architecture: all
 Depends: ${misc:Depends},
          docker.io,
 	 wget,
-	 
 Description: Script to manage containers to build packages using the official Droidian build tools
