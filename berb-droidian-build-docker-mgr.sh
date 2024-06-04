@@ -186,6 +186,7 @@ fn_create_container() {
 		-v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+	    
 	else
 	    abort "Docker mode not implemented"
 	fi
@@ -331,7 +332,7 @@ fn_dir_is_git() {
 
 fn_device_info_load() {
     ## Load device info vars
-    device_info_filename="/usr/lib/${package_name}/device_info.sh"
+    device_info_filename="/usr/lib/berb-droidian-build-docker-mgr/device_info.sh"
     [ ! -f "${device_info_filename}" ] && abort "The device_info.sh file is required!"
     source "${device_info_filename}" && fn_main_vars # && fn_specific_vars
 }
@@ -628,19 +629,20 @@ fn_kernel_config_droidian() {
 }
 
 fn_build_package_on_container() {
+    # Configuring the build execution
+    build_script_name="build-package-with-droidian-releng.sh"
+
     ## TODO Recreate the systemd wants links on the sparse directory
     #[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
     #./create-services-links.sh
-
-    # Configuring the build execution
-    build_script_name="build-package-with-droidian-releng.sh"
     #
-    #@ Copy the package files to the sparse dir
-    /usr/lib/${package_name}/cp_pkg_files_2_sparse_dir.sh --run
+    #@ TODO: Copy the package files to the sparse dir
+    #/usr/lib/berb-droidian-build-docker-mgr/cp_pkg_files_2_sparse_dir.sh --run
     #
     ## Copy the  releng caller script to the 
     ## TODO Put in a apt repo and install the package from de docker container
-    cp /usr/lib/${package_name}/${build_script_name} ${SOURCES_FULLPATH}
+    cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
+        ${SOURCES_FULLPATH}
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
     #
     ## Build package on container
