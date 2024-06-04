@@ -451,13 +451,6 @@ fn_docker_config_droidian_build_tools_package() {
 }
 
 fn_docker_config_standard_pkg_source() {
-    ## TODO implement package_version var
-    #
-    #
-    #
-    AQUI
-    #
-    #
     OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}-${package_version}"
     PACKAGES_DIR="${OUTPUT_FULLPATH}"
     buildd_fullpath="${PACKAGES_DIR}" 
