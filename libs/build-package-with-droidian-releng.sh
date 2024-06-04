@@ -45,6 +45,10 @@ fn_config_global() {
     cd /buildd/sources
 }
 
+fn_workdir_status_check() {
+    [ -n "$(git status | grep "staged")" ] && abort "The git workdir is not clean!"
+}
+
 fn_set_last_tag() {
     ## Check if the has commit has a tag
     last_commit_tag="$(git tag --contains "HEAD")"
@@ -107,6 +111,8 @@ fn_releng_changelog_restore_vars() {
 
 ## Load global conf
 fn_config_global
+## Check the git workdir status and abort if not clean
+fn_workdir_status_check
 ## Check if the last commit has a tag
 fn_set_last_tag
 ## Get package info
