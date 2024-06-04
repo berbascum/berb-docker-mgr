@@ -375,23 +375,11 @@ fn_dir_is_git() {
     [ ! -d ".git" ] && abort "The current dir should be a git repo!"
 }
 
-fn_git_get_pkg_name_version_from_tag() {
-    ## Get the package version from the main script from debian control
-    last_commit_tag="$(git tag --contains "HEAD")"
-    [ -z "${last_commit_tag}" ] && error "The last commit needs to be tagged before!"
-    package_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
-    package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
-    [ -z "${package_dist_channel}" ] && package_dist_channel="${package_dist_channel_tag}"
-    [ -z "${package_version}" ] && package_version="${package_version_tag}"
-    info "package_dist_channel = ${package_dist_channel}"
-    info "package_version = ${package_version}"
-}
-
 fn_device_info_load() {
     ## Load device info vars
     device_info_filename="/usr/lib/${package_name}/device_info.sh"
-    [ ! -f "${device_info_filename}" ] && abort "The device_info file is required!"
-    source "${device_info_filename}"
+    [ ! -f "${device_info_filename}" ] && abort "The device_info.sh file is required!"
+    source "${device_info_filename}" && fn_main_vars # && fn_specific_vars
 }
 
 fn_build_env_base_paths_config() {
@@ -419,8 +407,6 @@ fn_build_env_base_paths_config() {
 
         ## Get the package name from debian control
         package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-        ## Get the package version and dist channel from last commit that should be tagged
-        fn_git_get_pkg_name_version_from_tag
 
 	## Get the package type
 	pkg_type=""
@@ -692,63 +678,23 @@ fn_build_package_on_container() {
     #[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
     #./create-services-links.sh
 
-    # Script creation to launch compilation inside the container.
+    # Configuring the build execution
     build_script_name="build-package-with-droidian-releng.sh"
-    echo '#!/bin/bash' > ${SOURCES_FULLPATH}/${build_script_name}
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo 'chmod +x /buildd/sources/debian/rules' >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo 'cd /buildd/sources' >> ${SOURCES_FULLPATH}/${build_script_name}
     #
-    #echo "## Restore releng-tools scripts" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    #echo "apt-get --reinstall install releng-tools -y" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #echo "## Add more tag prefixes" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #echo "sed -i 's|tag_prefixes=(\"droidian/.*),|tag_prefixes=(\"droidian/\",\"stable/\",\"release/\",),|g'" \
+    #@ Copy the package files to the sparse dir
+    /usr/lib/${package_name}/cp_pkg_files_2_sparse_dir.sh --run
     #
-    ## Get the package version from the last tag
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "package_version=\"\$(git tag --contains "HEAD" | awk -F'/' '{print \$2}')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
+    ## Copy the  releng caller script to the 
+    cp /usr/lib/${package_name}/${build_script_name} ${SOURCES_FULLPATH}
+    chmod +x ${SOURCES_FULLPATH}/${build_script_name}
     #
-    ## Get the package dist channel from the last tag
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "package_dist_channel=\"\$(git tag --contains "HEAD" | awk -F'/' '{print \$1}')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Patch releng-build-changelog to set the package version externally from last tag
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Patch starting_version on releng-build-changelog with the last tag value" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "sed -i \"s|starting_version = strategy()|starting_version = \"\$comes\${package_version}\$comes\" #RESTORE|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Patch releng-build-changelog to set the package version_comment externally from last tag
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Patch self.comment on releng-build-changelog with the last tag value" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "sed -i \"s|self.comment = slugify(comment.replace(self.branch_prefix,.*|self.comment = \"\$comes\${package_dist_channel}\$comes\" #RESTORE|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Call releng to build package
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Call releng" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "RELENG_FULL_BUILD=yes RELENG_HOST_ARCH=${host_arch} releng-build-package" \
-	    >> ${SOURCES_FULLPATH}/${build_script_name}
-    #RELENG_TAG_PREFIX=stable/  RELENG_BRANCH_PREFIX
-    #
-    ## Restore the externally forced version on releng-buils-changelog
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Restore patched startin_version on releng-build-changelog" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "sed -i \"s|starting_version = .*RESTORE|starting_version = strategy()|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Add x perms to the compiler script
-    chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Restore releng-build-changelog to set the package version_comment externally from last tag
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "## Restore patched self.comment on releng-build-changelog" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo 'comes=\"' >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "sed -i \"s|self.comment = .*RESTORE|self.comment = slugify(comment.replace(self.branch_prefix, \$comes\$comes))|g\" /usr/lib/releng-tools/build_changelog.py" >> ${SOURCES_FULLPATH}/${build_script_name}
-    #
+    exit
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
     #missatge "Docker command is disabled for testing!"
+    #
+    ## Removing the build script from the package root dir
+    rm ${SOURCES_FULLPATH}/${build_script_name}
 
     info "Build package finished."
 
