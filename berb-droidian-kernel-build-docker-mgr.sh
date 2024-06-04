@@ -402,11 +402,11 @@ fn_build_env_base_paths_config() {
 	## Get the package type
 	pkg_type=""
 	[ -z "${pkg_type}" ] \
-		&& [ -n "$(echo "${package_name}" | grep "^adaptation")" ] && pkg_type="droidian_adapt"
+	    && [ -n "$(echo "${package_name}" | grep "^adaptation")" ] && pkg_type="droidian_adapt"
 	[ -z "${pkg_type}" ] \
-		&& pkg_type="standard_pkg"
+	    && pkg_type="standard_pkg"
 	[ -z "${pkg_type}" ] \
-		&& abort "Not supported sparse dir detected!"
+	    && abort "Not supported sparse dir detected!"
 
 	## Call droidian build tools configurer for packages
 	fn_docker_config_droidian_build_tools_package
