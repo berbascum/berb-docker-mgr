@@ -705,11 +705,11 @@ fn_build_package_on_container() {
     #echo "## Add more tag prefixes" >> ${SOURCES_FULLPATH}/${build_script_name}
     #echo "sed -i 's|tag_prefixes=(\"droidian/.*),|tag_prefixes=(\"droidian/\",\"stable/\",\"release/\",),|g'" \
     #
-    ## Get the package version from the script whose name is the packqge name
+    ## Get the package version from the last tag
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "package_version=\"\$(cat ${package_name}.sh | grep \"^TOOL_VERSION\" | awk -F'=' '{print \$2}' | sed 's/\"//g')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "package_version=\"\$(git tag --contains "HEAD" | awk -F'/' '{print \$2}')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
-    ## Get the package dist channel from the script whose name is the packqge name
+    ## Get the package dist channel from the last tag
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo "package_dist_channel=\"\$(git tag --contains "HEAD" | awk -F'/' '{print \$1}')\"" >> ${SOURCES_FULLPATH}/${build_script_name}
     #
