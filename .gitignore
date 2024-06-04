@@ -1,3 +1,10 @@
 last_changes
 commit_msg
 sparse
+
+## Debhelper outputs
+debian/.debhelper/
+debian/berb-droidian-build-docker-mgr.substvars
+debian/berb-droidian-build-docker-mgr
+debian/debhelper-build-stamp
+debian/files
