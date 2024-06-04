@@ -687,11 +687,16 @@ fn_build_package_on_container() {
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'chmod +x /buildd/sources/debian/rules' >> ${SOURCES_FULLPATH}/${build_script_name}
     echo 'cd /buildd/sources' >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "## Add more tag prefixes" >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "sed -i 's|tag_prefixes=(\"droidian/.*),|tag_prefixes=(\"droidian/\",\"stable/\",\"release/\",),|g'" \
+         /usr/lib/releng-tools/build_changelog.py >> ${SOURCES_FULLPATH}/${build_script_name}
     echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> "## Call releng"${SOURCES_FULLPATH}/${build_script_name}
     echo "RELENG_FULL_BUILD=yes RELENG_HOST_ARCH=${host_arch} releng-build-package" \
-	    >> ${SOURCES_FULLPATH}/${build_script_name}
-    ${SUDO} chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
+	    >>${SOURCES_FULLPATH}/${build_script_name}
+    #RELENG_TAG_PREFIX=stable/  RELENG_BRANCH_PREFIX
+    
+    chmod u+x ${SOURCES_FULLPATH}/${build_script_name}
     #docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
     missatge "Docker command is disabled for testing!"
 
