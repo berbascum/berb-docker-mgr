@@ -1,0 +1,66 @@
+berb-droidian-kernel-build-docker-mgr (1.0.0.3+git20240604081012.2e12627.release.1.0.0.3) release; urgency=medium
+
+  [ berbascum ]
+  * Initial commit
+  * (script upload) Starting version 0.0.0 develop
+  * (script upload) Version 0.0.1 develop
+  * (script upload) Version 0.0.2 develop
+  * (script upload) Version 0.0.2-1 develop
+  * (script upload) Version 0.0.3 testing
+  * (Fix) There are some simple redirections when creating compile script so is not fully generated
+  * Update README.md
+  * Update README.md
+  * Add initial .gitignore
+  * Update version and package information in the main script header
+  * Update header var names on the main script
+  * Update path vars in the main script
+  * Improve check kernel dir feature
+  * Fix some paths related code
+  * Improve some path related vars
+  * Fix some errors previous to the create container feature call
+  * Fix errors on docker container management functions
+  * Update install extra packages from apt feature
+  * Update config droidian kernel feature
+  * Add halium-hooks script creation in the Droidian kernel configuration feature from the main scrip
+  * Add kernel-snippet.mk patch to avoid errors when compiling vdso32 on some devices
+  * Update LLICENSE and README.md
+  * Update kernel-info.mk creation feature adding configuration for some vars
+  * Add droidian build deps for clang 10.0
+  * Update general menú options
+  * Improve debian packaging config code
+  * Reorder functions
+  * Fix container creation from the last commited image
+  * Update commit container feature to support many commits
+  * Update contaier management feature to support multiple containers with different kernel sources
+  * Improve defconfig common_fragments url definition
+  * Update the get device defconfig fragment file feature for creating a sample file
+  * Disable patch function that adds a var to enable the arm triplet on kernel-snippet.mk since is not needed
+  * Update Droidian packaging config feature with general improvements
+  * Clean some obsolete code
+  * Upate  install extra apt packages feature, but need mor revision since fail to find some pakages
+  * Add sample script that donloads and installs a specific
+  * Disable extra python prebuilt installer on the
+  * Update general indentation from tab to 4 spaces on the main script
+  * New feature to check the minimal recomended bash version
+  * Reorder header vars
+  * Add a releng build simplified script
+  * Update the releng build command from the official releng scrit to a simplified one
+  * Split patches for droidian source to independent functions and enable CROSS_COMPILE_32 kernel-snippet patch for vayu
+  * Fix typo error on create container function call
+  * Fix some errors on debian packaging for Droidian files creation
+  * Update README.md
+  * Improve container name
+  *     Multiple updates
+  * New: The user will be asked for enable docker multiarch on container start
+  * New: The standard_pkg mode build using droidian-releng was implemented
+  * Fixes: Some minor fixes
+  * Fix: The package version was not detected by releng-build-changelog was fixed setting it externally
+  * Fix: Some indentation fixes on the main script
+  * Improve: Feature  get package version now gets it from the last tag
+  * Fix: Indentation on debian/control
+
+  [ Berbascum ]
+  * Add packages to apt install feature and removed gcc-4.9 packages from the list
+
+ -- berbascum <berbascum@ticv.cat>  Tue, 04 Jun 2024 10:10:12 +0200
+
