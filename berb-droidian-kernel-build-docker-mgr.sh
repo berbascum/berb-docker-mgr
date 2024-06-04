@@ -96,6 +96,11 @@ fn_configura_sudo() {
 
 abort() {
     echo; echo "$*"
+    exit 5
+}
+
+error() {
+    echo; echo "$*"
     exit 1
 }
 
@@ -370,6 +375,18 @@ fn_dir_is_git() {
     [ ! -d ".git" ] && abort "The current dir should be a git repo!"
 }
 
+fn_git_get_pkg_name_version_from_tag() {
+    ## Get the package version from the main script from debian control
+    last_commit_tag="$(git tag --contains "HEAD")"
+    [ -z "${last_commit_tag}" ] && error "The last commit needs to be tagged before!"
+    package_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
+    package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
+    [ -z "${package_dist_channel}" ] && package_dist_channel="${package_dist_channel_tag}"
+    [ -z "${package_version}" ] && package_version="${package_version_tag}"
+    info "package_dist_channel = ${package_dist_channel}"
+    info "package_version = ${package_version}"
+}
+
 fn_device_info_load() {
     ## Load device info vars
     [ ! -f "device_info" ] && abort "The device_info file is required!"
@@ -399,6 +416,11 @@ fn_build_env_base_paths_config() {
 	## Set docker mode
 	docker_mode="package"
 
+        ## Get the package name from debian control
+        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
+        ## Get the package version and dist channel from last commit that should be tagged
+        fn_git_get_pkg_name_version_from_tag
+
 	## Get the package type
 	pkg_type=""
 	[ -z "${pkg_type}" ] \
@@ -423,11 +445,6 @@ fn_docker_config_droidian_build_tools_package() {
 
     # Set package paths
     SOURCES_FULLPATH="${START_DIR}"
-    ## Get the package name from debian control
-    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-
-    # Get package dirname as current dir name
-    pkg_dirname=$(basename ${SOURCES_FULLPATH})
 
     ## Call configurer for the detected package type
     fn_docker_config_${pkg_type}_source
