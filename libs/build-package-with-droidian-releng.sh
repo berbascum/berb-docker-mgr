@@ -2,7 +2,7 @@
 
 # Upstream-Name: berb-droidian-kernel-build-docker-mgr
 # Source: https://github.com/droidian-berb/berb-droidian-kernel-build-docker-mgr
-  ## Script that manages a custom docker container with Droidian build environment
+  ## Script to configure a debian package to be builded with the droidian releng-tools
 
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
