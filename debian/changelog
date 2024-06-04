@@ -1,4 +1,4 @@
-berb-droidian-kernel-build-docker-mgr (1.0.0.3+git20240604081012.2e12627.release.1.0.0.3) release; urgency=medium
+berb-droidian-build-docker-mgr (1.0.0.4+git20240604182216.ed46821.develop) develop; urgency=medium
 
   [ berbascum ]
   * Initial commit
@@ -58,9 +58,26 @@ berb-droidian-kernel-build-docker-mgr (1.0.0.3+git20240604081012.2e12627.release
   * Fix: Some indentation fixes on the main script
   * Improve: Feature  get package version now gets it from the last tag
   * Fix: Indentation on debian/control
+  * Test: The build standard package feature is finished and tested
+  * Add: debian/changelog
+  * Rename: File device_info was renamed to device_info.sh
+  * Update: File debian/<pkg-name>.dirs was updated including the /usr/lib/path
+  * Update builder script on container to set externally the self.comment on releng-build-changelog
+  * Update: builder-cript-on-container now gets the package_version from the last tag
+  * Split: The caller-releng-on-container script was fully splitted from the main script as a library
+  * New: A script-lib for copy the pkg dirs and files to the sparse dir before build was implemented
+  * Remove: An old releng script was deleted
+  * New: Check by the build releng caller the git workdir status and abort if not clean
+  * Update: Copiright information on the lib scripts
+  * Split: Doc related to changelog from main script was splitted to an archived changelog file
+  * Rename: Package name was renamed since now it builds non kernel packages too
+  * Update: .gitignore
+  * Update: Remove package_version from the build output dir on the main script
+  * Fix: File debian<package>.dirs was need to be fixed after the package rename
+  * Enable: Run build script on the container after some testing
 
   [ Berbascum ]
   * Add packages to apt install feature and removed gcc-4.9 packages from the list
 
- -- berbascum <berbascum@ticv.cat>  Tue, 04 Jun 2024 10:10:12 +0200
+ -- berbascum <berbascum@ticv.cat>  Tue, 04 Jun 2024 20:22:16 +0200
 
