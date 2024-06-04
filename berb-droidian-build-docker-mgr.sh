@@ -392,7 +392,7 @@ fn_docker_config_droidian_build_tools_package() {
 }
 
 fn_docker_config_standard_pkg_source() {
-    OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}-${package_version}"
+    OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}"
     PACKAGES_DIR="${OUTPUT_FULLPATH}"
     buildd_fullpath="${PACKAGES_DIR}" 
     buildd_sources_fullpath="${SOURCES_FULLPATH}"
