@@ -639,12 +639,12 @@ fn_build_package_on_container() {
     /usr/lib/${package_name}/cp_pkg_files_2_sparse_dir.sh --run
     #
     ## Copy the  releng caller script to the 
+    ## TODO Put in a apt repo and install the package from de docker container
     cp /usr/lib/${package_name}/${build_script_name} ${SOURCES_FULLPATH}
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
     #
-    exit
     ## Build package on container
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name}
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
     #missatge "Docker command is disabled for testing!"
     #
     ## Removing the build script from the package root dir
