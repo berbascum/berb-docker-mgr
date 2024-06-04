@@ -406,6 +406,7 @@ fn_check_for_droidian_build_tools() {
 	# AQUI
 }
 fn_docker_config_droidian_adapt_source() {
+# TODO:
 ## The build adaptation process consists on thre  parts:
 # config: (outside docker) The adaptation scripts are used to configure the build env
  # build: (on docker) execute releng-build-package on a container
@@ -641,6 +642,19 @@ fn_build_package_on_container() {
     #
     ## Copy the  releng caller script to the 
     ## TODO Put in a apt repo and install the package from de docker container
+
+## TODO: DOCKER MGR CONTROL DEPS WITH ADAPT-HELPER
+## TODO: APT REPO JAAAA || CREAR DEV TEMPLATE PER A UNES KEYS GPG
+## TODO: Solucionar depends releng. Potser fer rebuild posant les meves deps
+## TODO: IMPROVE PATH DEL device_info
+## TODO: SOLUCIONAR INSTAL:LAR DOCKER MANAGER AL CONTAINER PER TENIR BUILD SCRIPT DIRECTE
+## TODO: 
+## TODO: SEPARAR FUNCIONS EN ARXIUS DIFERENTS
+## TODO: 
+## TODO: IMPLEMENTAR MODE ADAPTATION
+## TODO: SOLUCIÓ MÉS NETA PER VERSIÓ DE RELENG-BUILD-CHANGELOG
+## TODO: ORDENAR PART DEK KERNEL
+
     cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
         ${SOURCES_FULLPATH}
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
