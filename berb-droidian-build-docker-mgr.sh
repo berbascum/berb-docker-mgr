@@ -36,7 +36,7 @@
 #################
 ## Header vars ##
 #################
-#TOOL_VERSION="1.0.0.3"
+#TOOL_VERSION="2.0.0.1"
 #TOOL_CHANNEL="develop"
 TESTED_BASH_VER='5.2.15'
 
