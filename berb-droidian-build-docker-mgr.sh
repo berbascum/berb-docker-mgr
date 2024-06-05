@@ -41,58 +41,43 @@
 TESTED_BASH_VER='5.2.15'
 
 
-######################
-## Global functions ##
-######################
-fn_configura_sudo() {
-    if [ "$USER" != "root" ]; then SUDO='sudo'; fi
-}
+####################
+## Info functions ##
+####################
 
-abort() {
-    echo; echo "$*"
-    exit 5
-}
+info() { echo "$*"; }
+INFO() { echo; echo "$*"; }
+warn() { echo "$*"; }
+WARN() { echo; echo "$*"; }
+abort() { echo "$*"; exit 10; }
+ABORT() { echo; echo "$*"; exit 10; }
+error() { echo "$*"; exit 1; }
+ERROR() { echo; echo "$*"; exit 1; }
+missatge() {  echo "$*"; }
+missatge_return() { echo; echo "$*"; return 0; }
+ask() { echo; read -p "$*" answer; }
+pause() { echo; read -p "$*"; }
 
-error() {
-    echo; echo "$*"
-    exit 1
-}
-
-info() {
-    echo; echo "$*"
-}
-
-ask() {
-    echo; read -p "$*" answer
-}
-
-pause() {
-    echo; read -p "$*"
-}
-missatge() {
-    echo; echo "$*"
-}
-
-missatge_return() {
-    echo; echo "$*"
-    return 0
-}
-
+#######################
+## Control functions ##
+#######################
 fn_check_bash_ver() {
-    bash_ver=$(bash --version | head -n 1 | awk '{print $4}' | awk -F'(' '{print $1}' | awk -F'.' '{print $1"."$2"."$3}')
+    bash_ver=$(bash --version | head -n 1 \
+	| awk '{print $4}' | awk -F'(' '{print $1}' | awk -F'.' '{print $1"."$2"."$3}')
     IFS_BKP=$IFS
     IFS='.' read -r vt_major vt_minor vt_patch <<< "${TESTED_BASH_VER}"
     IFS='.' read -r v_major v_minor v_patch <<< "${bash_ver}"
     IFS=$IFS_BKP
     if [[ $v_major -lt $vt_major ]] || \
            ([[ $v_major -eq $vt_major ]] && [[ $v_minor -lt $vt_minor ]]) || \
-           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -eq $vt_minor ]] && [[ $v_patch -lt $vt_patch ]]); then
+           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -eq $vt_minor ]] \
+	       && [[ $v_patch -lt $vt_patch ]]); then
     	clear
-        echo; echo "Bash version detected is lower than tested version"
-        echo "If getting errors during script execution, try upgrading bash to \"${TESTED_BASH_VER}\" version"
-	echo; read -p "Press Inro to continue"
+        WARN "Bash version detected is lower than the tested version"
+        warn "If errors are found, try upgrading bash to \"${TESTED_BASH_VER}\" version"
+	pause "Press Inro to continue"
     else
-        echo; echo "Bash version requirements are fine"
+        INFO "Bash version requirements are fine"
     fi
 }
 
@@ -100,6 +85,8 @@ fn_check_bash_ver() {
 ######################
 ## Config functions ##
 ######################
+fn_configura_sudo() { [ "$USER" != "root" ] && SUDO='sudo'; }
+
 fn_ip_forward_activa() {
     ## Activa ipv4_forward (requerit per xarxa containers) i reinicia docker.
     ## És la primera funció que crida l'script
@@ -125,7 +112,7 @@ fn_docker_global_config() {
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
 
-    ## If no docker images found, set default config
+    ## If no docker images found, set the default config
     docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
     if [ "${docker_how_many_imgs}" -eq "0" ]; then
 	IMAGE_NAME="${IMAGE_BASE_NAME}"
@@ -134,19 +121,19 @@ fn_docker_global_config() {
 	return 0
     fi
 
-    ## If docker images found, search for a commited image with tag=latest
+    ## If a docker image with "latest" on the tag name is found, set the commited config
     img_latest_tag="$(docker images | grep -v "TAG" | grep "${IMAGE_COMMIT_NAME}" \
 	    | grep "latest" | awk '{print $1}')"
     if [ -n "${img_latest_tag}" ]; then
         IMAGE_NAME="${IMAGE_COMMIT_NAME}"
         CONTAINER_NAME="$CONTAINER_COMMITED_NAME"
         #IMAGE_TAG="${IMAGE_COMMIT_TAG}"
-        IMAGE_TAG="" ## Don't want a tag since we wnt "latest" as tag
+        IMAGE_TAG="" ## Don't want a tag since we want "latest" as tag
 	commited_img_found="True"
 	return 0
     fi
 
-    ## If docker images found but there isn't latest comit, and the default image exist, set default config
+    ## If no images with "latest" on tag name is found, set the default config
     img_base_exist="$(docker images | grep -v "TAG" | grep "${IMAGE_BASE_NAME}")"
     if [ -n "${img_base_exist}" ]; then
 	IMAGE_NAME="${IMAGE_BASE_NAME}"
@@ -155,25 +142,27 @@ fn_docker_global_config() {
 	return 0
     fi
 
-    abort "An error occourred setting the CONTAINER_NAME var!"
+    ERROR "An error occourred setting the CONTAINER_NAME var!"
 }
 
 fn_docker_multiarch_enable() {
-	## Enable multiarch in docker as suggested in the official porting guide
-	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    ## Enable multiarch in docker as suggested in the official porting guide
+    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 }
 
 fn_create_container() {
 # Creates the container
-    echo; echo "CONTAINER_NAME = $CONTAINER_NAME"
-    read -p "Pausa..."
+    DEBUG "CONTAINER_NAME = $CONTAINER_NAME"
+    pause "Pausa..."
 
     CONTAINER_EXISTS=$(docker ps -a | grep -c ${CONTAINER_NAME})
     img_commited_exist=$(docker images | grep ${IMAGE_COMMIT_NAME})
-    [ -n "${img_commited_exist}" ] && IMAGE_NAME="${IMAGE_COMMIT_NAME}" && IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
+    [ -n "${img_commited_exist}" ] && IMAGE_NAME="${IMAGE_COMMIT_NAME}" \
+	&& IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 
     if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
-        info "Creating docker container \"${CONTAINER_NAME}\" using \"${IMAGE_NAME}:${IMAGE_TAG}\" img..." 
+        INFO "Creating docher container \"${CONTAINER_NAME}\""
+	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" imgage..." 
 	if [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 	        -v ${buildd_fullpath}:/buildd \
@@ -181,50 +170,52 @@ fn_create_container() {
 		-v ${buildd_local_repo_fullpath}:/buildd/local-repo \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
 	elif [[ "${docker_mode}" == "kernel" \
-		|| ("${docker_mode}" == "package" && "${pkg_type}" == "standard_pkg") ]] ; then
+            || ("${docker_mode}" == "package" && "${pkg_type}" == "standard_pkg") ]]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 		-v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
-	    
 	else
-	    abort "Docker mode not implemented"
+	    ABORT "Docker mode not implemented"
 	fi
 	## Ask to start container
-	ask "Want to start the container? [ y|n ]: "
+	ASK "Want to start the container? [ y|n ]: "
 	[ "${answer}" == "y" ] && start_cont="True" && fn_start_container
 	#Ask to install required apt packages
-	[ "${start_cont}" == "True" ] && ask "Want to install the required apt packages? [ y|n ]: "
+	[ "${start_cont}" == "True" ] \
+	    && ASK "Want to install the required apt packages? [ y|n ]: "
 	[ "${answer}" == "y" ] && req_inst="True" && fn_install_apt_req
 	#Ask to install basic apt packages
-	[ "${req_inst}" == "True" ] && ask "Want to install the basic apt packages? [ y|n ]: "
+	[ "${req_inst}" == "True" ] \
+	    && ASK "Want to install the basic apt packages? [ y|n ]: "
 	[ "${answer}" == "y" ] && base_inst="True" && fn_install_apt_base
 	#Ask to install extra apt packages
-	[ "${base_inst}" == "True" ] && ask "Want to install the extra apt packages? [ y|n ]: "
+	[ "${base_inst}" == "True" ] \
+	    && ASK "Want to install the extra apt packages? [ y|n ]: "
 	[ "${answer}" == "y" ] && fn_install_apt_extra
 
-	info "Container created!"
+	INFO "Container created!"
     else
-	info "Container already exists!" && exit 4
+	INFO "Container already exists!" && exit 4
     fi
 }
 
 fn_remove_container() {
     # Removes a the container
     CONTAINER_EXIST=$(docker ps -a | grep -c "$CONTAINER_NAME")
- 	CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
+    CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
     if [ "$CONTAINER_EXIST" -eq '0' ]; then
-	echo && echo "Container $CONTAINER_NAME not exists..."
+	INFO "Container $CONTAINER_NAME not exists..."
 	echo
     else
-	echo && read -p "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? " RM_CONT
+	PAUSE "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? " RM_CONT
     fi
     if [ "$RM_CONT" == "yes" ]; then
- 	echo && echo "Removing container..."
+ 	INFO "Removing container..."
 	fn_stop_container
 	docker rm $CONTAINER_ID
     else
-	echo && echo "Container $CONTAINER_NAME will NOT be removed as user choice"
+	INFO "Container $CONTAINER_NAME will NOT be removed as user choice"
 	echo
     fi
 }
@@ -233,16 +224,16 @@ fn_start_container() {
     IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
     if [ "$IS_STARTED" -eq "0" ]; then
 	## Ask for enable multiarch support
-	ask "Want to start the docker multiarch compat? [ y|n ]: "
+	ASK "Want to start the docker multiarch compat? [ y|n ]: "
 	[ "${answer}" == "y" ] && fn_docker_multiarch_enable
 	## Start the container
-        info "Starting container ${CONTAINER_NAME}"
+        INFO "Starting container ${CONTAINER_NAME}"
 	docker start $CONTAINER_NAME
     fi
 }
 
 fn_stop_container() {
-    info "Stopping container ${CONTAINER_NAME}"
+    INFO "Stopping container ${CONTAINER_NAME}"
     docker stop ${CONTAINER_NAME}
 }
 
@@ -253,21 +244,22 @@ fn_get_default_container_id() {
 
 fn_commit_container() {
     clear
-    echo; echo "INFO about commiting containers"
-    echo; echo "UNDER REVISION"
-    echo; echo "When the first commit is created, a new image from the base container is created"
-    echo "and a container with the container commited name is created from te commited image"
-    echo; echo "The next commits will be taken from the comitted container, updatingd the image and"
-    echo "recreating the container"
-    echo; read -p "Intro to continue..."
+    INFO "INFO about commiting containers"
+    info "UNDER REVISION"
+    INFO "When the first commit is created, a new image from the base container is created"
+    info "and a container with the commited name is created from te commited image"
+    INFO "The next commits will be taken from the comitted container,"
+    info "updatingd the image and recreating the container"
+    PAUSE "Intro to continue..."
 
-    ## Check if a container from a commited image exist. Case exist, create a new commit from commited container
+    ## Check if a container from a commited image exist.
+    ## Case exist, create a new commit from commited container
     ## Otherwise create a commit from the base container.
     container_exist=$(docker ps -a | grep ${CONTAINER_COMMITED_NAME})
     if [ -n "${container_exist}" ]; then
         # Commit creation
-        echo && echo "Creating another committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_COMMITED_NAME}\" container..."
-        echo "Please be patient!!!"
+        INFO "Creating another committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_COMMITED_NAME}\" container..."
+        info "Please be patient!!!"
         docker commit "${CONTAINER_COMMITED_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
         docker stop "${CONTAINER_COMMITED_NAME}"
         docker rm "${CONTAINER_COMMITED_NAME}"
@@ -275,25 +267,25 @@ fn_commit_container() {
 	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
 	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
-	echo && echo "Recreating ${CONTAINER_NAME} container from committed image ${IMAGE_NAME}:${IMAGE_TAG}..."
+	INFO "Recreating ${CONTAINER_NAME} container from committed image ${IMAGE_NAME}:${IMAGE_TAG}..."
 	fn_create_container
-	echo && echo Creation of another commit and container with the current state is finished!
+	INFO "Creation of another commit and container with the current state is finished!"
 	echo
     else
         # Commit creation
-        echo && echo "Creating the first committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_BASE_NAME}\" container..."
+        INFO "Creating the first committed image \"$IMAGE_COMMIT_NAME\" from \"${CONTAINER_BASE_NAME}\" container..."
         echo "Please be patient!!!"
         docker commit "${CONTAINER_BASE_NAME}" "${IMAGE_COMMIT_NAME}:${IMAGE_COMMIT_TAG}_latest"
 	# Create new container from commit image.
 	CONTAINER_NAME="${CONTAINER_COMMITED_NAME}"
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
 	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
-	echo && echo "Creating new ${CONTAINER_NAME} container from committed imag ${IMAGE_NAME}:${IMAGE_TAG}..."
+	INFO "Creating new ${CONTAINER_NAME} container from committed imag ${IMAGE_NAME}:${IMAGE_TAG}..."
 	fn_create_container
-	echo && echo Creation of the first commit and container with the current state is finished!
+	INFO "Creation of the first commit and container with the current state is finished!"
 	echo
     fi
-}
+}	
 
 fn_shell_to_container() {
     docker exec -it $CONTAINER_NAME bash --login
