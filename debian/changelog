@@ -1,4 +1,4 @@
-berb-droidian-build-docker-mgr (2.0.0.1+git20240606015951.5c8f711.develop) develop; urgency=medium
+berb-droidian-build-docker-mgr (2.0.0.1+git20240606025011.a62a3f5.develop) develop; urgency=medium
 
   [ berbascum ]
   * Initial commit
@@ -83,9 +83,13 @@ berb-droidian-build-docker-mgr (2.0.0.1+git20240606015951.5c8f711.develop) devel
   * Start: version 2.0.0.1 where the script will be splitted to different plugins
   * New: Bash scripts to implement the plugins splitting
   * Update: Splitting phase 1 is finished and starts the testing phase
+  * Move: Plugin scripts to the libs dir
+  * Update: Improve cp_pkg_files_2_sparse_dir.sh to copy all libs dir files to sparse
+  * Update: Doc changelog
+  * Finish: Version 2.0.0.1-develop with the splitted standard pkg builder tested and working
 
   [ Berbascum ]
   * Add packages to apt install feature and removed gcc-4.9 packages from the list
 
- -- berbascum <berbascum@ticv.cat>  Thu, 06 Jun 2024 03:59:51 +0200
+ -- berbascum <berbascum@ticv.cat>  Thu, 06 Jun 2024 04:50:11 +0200
 
