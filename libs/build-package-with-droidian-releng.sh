@@ -43,10 +43,30 @@ ask() { echo; read -p "$*" answer; }
 fn_config_global() {
     chmod +x /buildd/sources/debian/rules
     cd /buildd/sources
+    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 }
 
 fn_workdir_status_check() {
     [ -n "$(git status | grep "staged")" ] && abort "The git workdir is not clean!"
+}
+
+fn_update_main_src_file_version_var() {
+    ## Update the TOOL_VERSION value on the main source file with the last tag version
+    tag_version=$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')
+OBTENIR num versio var TOOL_VERSION
+    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
+	tool_vers_var_name="TOOL_VERSION"
+    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
+        tool_vers_var_name="#TOOL_VERSION"
+    else
+        tool_vers_var_name=""
+    fi
+    if [ -n "${tool_vers_var_name}" ]; then
+	tool_vers_var_version=$(cat 
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
+
+        info "Creating tag \"${last_commit_tag}\" on the last commit..."
+	git tag "${last_commit_tag}"
 }
 
 fn_set_last_tag() {
@@ -54,22 +74,23 @@ fn_set_last_tag() {
     last_commit_tag="$(git tag --contains "HEAD")"
     if [ -z "${last_commit_tag}" ]; then
         clear && info "The last commit has not assigned a tag and is required"
-        last_tag=$(git log --decorate | grep 'tag:' | head -n 1 | awk '{print $NF}' | tr -d ')')
-        [ -n "${last_tag}" ] \
-	   && last_commit_tagged=$(git log --decorate  --abbrev-commit \
+        last_tag=$(git log --decorate | grep 'tag:' \
+	    | head -n 1 | awk '{print $NF}' | tr -d ')')
+        if [ -n "${last_tag}" ]; then
+	    last_commit_tagged=$(git log --decorate  --abbrev-commit \
 	       | grep 'tag:' | head -n 1 | awk '{print $2}') \
-           && commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}") \
-           && info "The last tag is \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
-        [ -z "${last_tag}" ] \
-           && info "No git tags found!"
-        ask "Enter a tag name in \"<tag_prefix>/<version>\" format or leave empty to cancel: "
-        [ -z "${answer}" ] && abort "Canceled by user!"
-        input_tag_is_valid=$(echo "${answer}" | grep "\/")
-        [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
-        last_commit_tag="${answer}"
-	info "Creating tag \"${last_commit_tag}\" on the last commit..."
-	git tag "${last_commit_tag}"
+            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}") \
+            info "Last tag \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
+	else
+            info "No git tags found!"
+            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
+            [ -z "${answer}" ] && abort "Canceled by user!"
+            input_tag_is_valid=$(echo "${answer}" | grep "\/")
+            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
+            last_commit_tag="${answer}"
+	fi
     fi
+    fn_update_main_src_file_version_var
 }
 
 fn_get_package_info() {
