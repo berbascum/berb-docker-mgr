@@ -397,14 +397,16 @@ fn_pkg_source_type_detection() {
 
 	## Get the package type
 	pkg_type=""
-	[ -z "${pkg_type}" ] \
-	    && [ -n "$(echo "${package_name}" | grep "^adaptation")" ] \
-	    && pkg_type="droidian_adapt"
-	[ -z "${pkg_type}" ] \
-	    && pkg_type="standard_pkg"
-	[ -z "${pkg_type}" ] \
-	    && abort "Not supported sparse dir detected!"
+	if [ -z "${pkg_type}" ]; then
+	   if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
+	       pkg_type="droidian_adapt"
+           else
+	       pkg_type="standard_pkg"
+	   fi
+        fi
 
+	INFO "Package type detected: \"${pkg_type}\""
+	PAUSE "Pauseta..."
 	## Call droidian build tools configurer for packages
 	source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
 	fn_docker_config_droidian_build_tools_package
@@ -550,6 +552,8 @@ fn_action_prompt() {
 fn_ip_forward_activa
 fn_configura_sudo
 fn_check_bash_ver
+## Load device info config
+fn_device_info_load
 fn_pkg_source_type_detection
 fn_docker_global_config
 fn_action_prompt

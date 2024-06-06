@@ -39,7 +39,7 @@ fn_docker_config_droidian_build_tools_package() {
     APT_INSTALL_EXTRA="releng-tools"
     
     ## Load device_info vars
-    fn_device_info_load
+    #fn_device_info_load
 
     # Set package paths
     SOURCES_FULLPATH="${START_DIR}"
