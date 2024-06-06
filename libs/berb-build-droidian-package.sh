@@ -34,22 +34,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-fn_docker_config_droidian_build_tools_package() {
-    APT_INSTALL_EXTRA="releng-tools"
-    
-    ## Load device_info vars
-    #fn_device_info_load
-
-    # Set package paths
+fn_docker_config_droidian_package_source() {
     SOURCES_FULLPATH="${START_DIR}"
-
-    ## Call configurer for the detected package type
-    fn_docker_config_${pkg_type}_source
-}
-export -f fn_docker_config_droidian_build_tools_package
-
-fn_docker_config_standard_pkg_source() {
     OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}"
     PACKAGES_DIR="${OUTPUT_FULLPATH}"
     buildd_fullpath="${PACKAGES_DIR}" 
@@ -57,11 +43,13 @@ fn_docker_config_standard_pkg_source() {
     ## Create the output dir
     [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
 }
+export -f fn_docker_config_droidian_package_source
 
 fn_check_for_droidian_build_tools() {
 	echo "TODO"
 	# AQUI
 }
+
 fn_docker_config_droidian_adapt_source() {
 # TODO:
 ## The build adaptation process consists on thre  parts:

@@ -341,8 +341,13 @@ fn_install_apt_extra() {
 ## Config build functions ##
 ############################
 fn_dir_is_git() {
-    ## Abort if no .git directori found
-    [ ! -d ".git" ] && abort "The current dir should be a git repo!"
+    ## Abort if no .git directory found
+    [ ! -d ".git" ] && ABORT "The current dir should be a git repo!"
+}
+
+fn_debian_control_found() {
+    ## Abort if no debian/control file found
+    [ ! -f "debian/control" ] && ABORT "debian control file not found!"
 }
 
 fn_device_info_load() {
@@ -372,44 +377,48 @@ fn_device_info_load() {
 fn_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)
+    ## check for git dir
+    fn_dir_is_git # Abort if not
+    ## Check for debian control
+    fn_debian_control_found # Abort if not
+    ## Get the package name from debian control
+    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
+
     # Cerca un arxiu README de linux kernel
     if [ -e "$START_DIR/README" ]; then
-	## check for git dir
-	fn_dir_is_git # Aborts if not
 	## Check if is kernel
         IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
         [ "${IS_KERNEL}" -eq '0' ] \
 	    && ABORT "No Linux kernel README file found in current dir."
+        APT_INSTALL_EXTRA="releng-tools"
 	INFO "Kernel source dir detected!"
 	docker_mode="kernel"
-	## Call kernel source config
+	## Load berb-build-droidian-kernel.sh
+	source  /usr/lib/${TOOL_NAME}/berb-build-droidian-kernel.sh
+	## Call kernel source config function
 	fn_docker_config_kernel_source
     elif [ -e "${START_DIR}/sparse" ]; then
-        ## check for git dir
-        fn_dir_is_git # Aborts if not
-	## Check for debian control
-	[ ! -f "debian/control" ] && abort "debian control file not found!"
 	## Set docker mode
 	docker_mode="package"
-
-        ## Get the package name from debian control
-        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-
 	## Get the package type
 	pkg_type=""
 	if [ -z "${pkg_type}" ]; then
 	   if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
 	       pkg_type="droidian_adapt"
+               APT_INSTALL_EXTRA="releng-tools"
+	       INFO "Package type detected: \"${pkg_type}\""
            else
 	       pkg_type="standard_pkg"
+               APT_INSTALL_EXTRA="releng-tools"
+	       INFO "Package type detected: \"${pkg_type}\""
+	       ## Source the corresponding pkg_type lib
+	       source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
 	   fi
+	   ## Source the build droidian package lib
+	   source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
+           ## Configure the droidian package source
+           fn_docker_config_droidian_package_source
         fi
-
-	INFO "Package type detected: \"${pkg_type}\""
-	PAUSE "Pauseta..."
-	## Call droidian build tools configurer for packages
-	source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
-	fn_docker_config_droidian_build_tools_package
     else
         abort "Not supported package dir found!"
     fi
