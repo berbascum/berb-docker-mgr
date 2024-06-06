@@ -37,6 +37,7 @@
 #################
 ## Header vars ##
 #################
+TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
 #TOOL_VERSION="2.0.0.1"
 #TOOL_CHANNEL="develop"
 TESTED_BASH_VER='5.2.15'
@@ -50,14 +51,18 @@ info() { echo "$*"; }
 INFO() { echo; echo "$*"; }
 warn() { echo "$*"; }
 WARN() { echo; echo "$*"; }
+debug() { echo "$*"; }
+DEBUG() { echo; echo "$*"; }
 abort() { echo "$*"; exit 10; }
 ABORT() { echo; echo "$*"; exit 10; }
 error() { echo "$*"; exit 1; }
 ERROR() { echo; echo "$*"; exit 1; }
 missatge() {  echo "$*"; }
 missatge_return() { echo; echo "$*"; return 0; }
-ask() { echo; read -p "$*" answer; }
-pause() { echo; read -p "$*"; }
+ask() { read -p "$*" answer; }
+ASK() { echo; read -p "$*" answer; }
+pause() { read -p "$*"; }
+PAUSE() { echo; read -p "$*"; }
 
 #######################
 ## Control functions ##
@@ -304,6 +309,9 @@ fn_cp_from_container() {
     docker cp ${CONTAINER_NAME}:${copy_src} ${copy_dst}
 }
 
+################################
+## APT on container functions ##
+################################
 fn_install_apt() {
     packages="$1"
     APT_UPDATE="apt-get update"
@@ -312,159 +320,6 @@ fn_install_apt() {
     CMD="$APT_UPDATE" && fn_cmd_on_container
     CMD="$APT_UPGRADE" && fn_cmd_on_container
     CMD="$APT_INSTALL" && fn_cmd_on_container
-}
-
-
-############################
-## Kernel build functions ##
-############################
-fn_dir_is_git() {
-    ## Abort if no .git directori found
-    [ ! -d ".git" ] && abort "The current dir should be a git repo!"
-}
-
-fn_device_info_load() {
-    ## Load device info vars
-    device_info_filename="/usr/lib/berb-droidian-build-docker-mgr/device_info.sh"
-    [ ! -f "${device_info_filename}" ] && abort "The device_info.sh file is required!"
-    source "${device_info_filename}" && fn_main_vars # && fn_specific_vars
-}
-
-fn_build_env_base_paths_config() {
-	## Save start fullpath
-    START_DIR=$(pwd)
-    # Cerca un aerxiu README de linux kernel
-    if [ -e "$START_DIR/README" ]; then
-	## check for git dir
-	fn_dir_is_git # Aborts if not
-	## Check if is kernel
-        IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-        [ "${IS_KERNEL}" -eq '0' ] && abort "No Linux kernel README file found in current dir."
-	info "Kernel source dir detected!"
-	docker_mode="kernel"
-
-	## Call kernel source config
-	fn_docker_config_kernel_source
-    elif [ -e "${START_DIR}/sparse" ]; then
-        ## check for git dir
-        fn_dir_is_git # Aborts if not
-	## Check for debian control
-	[ ! -f "debian/control" ] && abort "debian control file not found!"
-	## Set docker mode
-	docker_mode="package"
-
-        ## Get the package name from debian control
-        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-
-	## Get the package type
-	pkg_type=""
-	[ -z "${pkg_type}" ] \
-	    && [ -n "$(echo "${package_name}" | grep "^adaptation")" ] && pkg_type="droidian_adapt"
-	[ -z "${pkg_type}" ] \
-	    && pkg_type="standard_pkg"
-	[ -z "${pkg_type}" ] \
-	    && abort "Not supported sparse dir detected!"
-
-	## Call droidian build tools configurer for packages
-	fn_docker_config_droidian_build_tools_package
-    else
-        abort "Not supported package dir found!"
-    fi
-}
-
-fn_docker_config_droidian_build_tools_package() {
-    APT_INSTALL_EXTRA="releng-tools"
-    
-    ## Load device_info vars
-    fn_device_info_load
-
-    # Set package paths
-    SOURCES_FULLPATH="${START_DIR}"
-
-    ## Call configurer for the detected package type
-    fn_docker_config_${pkg_type}_source
-}
-
-fn_docker_config_standard_pkg_source() {
-    OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}"
-    PACKAGES_DIR="${OUTPUT_FULLPATH}"
-    buildd_fullpath="${PACKAGES_DIR}" 
-    buildd_sources_fullpath="${SOURCES_FULLPATH}"
-    ## Create the output dir
-    [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
-}
-
-fn_check_for_droidian_build_tools() {
-	echo "TODO"
-	# AQUI
-}
-fn_docker_config_droidian_adapt_source() {
-# TODO:
-## The build adaptation process consists on thre  parts:
-# config: (outside docker) The adaptation scripts are used to configure the build env
- # build: (on docker) execute releng-build-package on a container
- # sign: (outside docker) droidian-build-tools script signs the packages
- # recipes creation: src/build-tools/image.sh found on:
-   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian
- # debs creation: found on:
-   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian/apt
-    #
-    # Set package paths
-    droidian_build_tools_fullpath="${START_DIR}/droidian-build-tools/bin"
-    adapt_droidian_template_relpath="droidian"
-    package_relpath="droidian/${vendor}/${codename}/packages/adaptation-${vendor}-${codename}"
-    adapt_droidian_apt_reldir="droidian/${vendor}/${codename}/droidian/apt"
-    ## Set paths for docker
-    PACKAGE_DIR="${droidian_build_tools_fullpath}/${package_relpath}"
-    RESULT_DIR="$(mktemp)"
-    LOCAL_REPO_DIR="${droidian_build_tools_fullpath}/${adapt_droidian_apt_reldir}"
-    ## Set dirs to mount on the docker container
-    buildd_fullpath="${RESULT_DIR}" 
-    buildd_sources_fullpath="${PACKAGE_DIR}"
-    buildd_local_repo_fullpath="${LOCAL_REPO_DIR}"
-
-#AQUI
-
-}
-
-fn_docker_config_kernel_source() {
-    APT_INSTALL_EXTRA=" \
-        bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
-        linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64 \
-        linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps \
-        mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2 \
-        gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android \
-        libgcc-4.9-dev-aarch64-linux-android-cross \
-        binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu"
-       #clang-android-6.0-4691093 clang-android-10.0-r370808 \
-    # Set SOURCES_FULLPATH to parent kernel dir
-    SOURCES_FULLPATH="$(dirname ${START_DIR})"
-    ## get kernel info
-    export KERNEL_DIR="${START_DIR}"
-    # Set KERNEL_NAME to current dir name
-    pkg_dirname=$(basename ${START_DIR})
-    package_name=${pkg_dirname}
-    KERNEL_NAME="${package_name}"
-    #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
-    export PACKAGES_DIR="$SOURCES_FULLPATH/out-$KERNEL_NAME"
-    ## Set dirs to mount on the docker container
-    buildd_fullpath="${$PACKAGES_DIR}" 
-    buildd_sources_fullpath="${KERNEL_DIR}"
-    ## Set kernel build output paths
-    KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
-    KERNEL_BUILD_OUT_DEBS_PATH="$PACKAGES_DIR/debs"
-    KERNEL_BUILD_OUT_DEBIAN_PATH="$PACKAGES_DIR/debian"
-    KERNEL_BUILD_OUT_LOGS_PATH="$PACKAGES_DIR/logs"
-    KERNEL_BUILD_OUT_OTHER_PATH="$PACKAGES_DIR/other"
-    ## Create kernel build output dirs
-    # [ -d "${KERNEL_BUILD_OUT_KOBJ_PATH}" ] || mkdir -v -p ${KERNEL_BUILD_OUT_KOBJ_PATH}
-    [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
-    [ -d "$KERNEL_BUILD_OUT_DEBS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBS_PATH
-    [ -d "$KERNEL_BUILD_OUT_DEBIAN_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_DEBIAN_PATH
-    [ -d "$KERNEL_BUILD_OUT_LOGS_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_LOGS_PATH
-    [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
-    ## Backups info
-    BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
 }
 
 fn_install_apt_req() {
@@ -482,273 +337,80 @@ fn_install_apt_extra() {
     fn_install_apt "${APT_INSTALL_EXTRA}"
 }
 
-fn_patch_kernel_snippet_cross_32() {
-# Requires "CROSS_COMPILE_32 = arm-linux-gnueabi-" on kernel-info.mk
-    ## Patch kenel-snippet.mk to fix vdso32 compilation for selected devices
-    ## CURRENTLY not used since the Droidian packaging configures the 32 bit compiler
-    if [ "$DEVICE_MODEL" == "vayu" ]; then
-	echo; echo "Patching kernel-snippet.mk to avoid vdso32 build error on some devices"
-	replace_pattern='s/CROSS_COMPILE_ARM32=$(CROSS_COMPILE)/CROSS_COMPILE_ARM32=$(CROSS_COMPILE_32)/g'
-	CMD="sed -i ${replace_pattern} /usr/share/linux-packaging-snippets/kernel-snippet.mk"
-	fn_cmd_on_container
-    fi
-}
-fn_patch_kernel_snippet_python275b_path() {
-    ## Patch kenel-snippet.mk to add te python275b path to the FULL_PATH var
-    if [ "$DEVICE_MODEL" == "vayu" ]; then
-	echo; echo "Patching kernel-snippet.mk to add te python275b path to the FULL_PATH var"
-	# WORKS replace_pattern='s|debian/path-override:|debian/path-override:/buildd/sources/droidian/python/2.7.5/bin:|g'
-	replace_pattern='s|$(BUILD_PATH):$(CURDIR)/debian/path-override:|$(BUILD_PATH):$(CURDIR)/debian/path-override:/buildd/sources/droidian/python/2.7.5/bin:|g'
-	#replace_pattern="s|FULL_PATH = \$\(BUILD_PATH\)\:\$\(CURDIR\)\/debian\/path-override\:\$\{PATH\}|FULL_PATH = \$\(BUILD_PATH\)\:\$\(CURDIR\)\/debian\/path-override\:\/buildd\/sources\/droidian\/python\/2\.7\.5\/bin\:\$\{PATH\}|g"
-	CMD="sed -i "${replace_pattern}" /usr/share/linux-packaging-snippets/kernel-snippet.mk"
-	fn_cmd_on_container
-    fi
+############################
+## Config build functions ##
+############################
+fn_dir_is_git() {
+    ## Abort if no .git directori found
+    [ ! -d ".git" ] && abort "The current dir should be a git repo!"
 }
 
+fn_device_info_load() {
+    ## Check file in the user home .config dir
+    device_info_filename="device_info.sh"
+    dev_info_template_fullpath="/usr/lib/${TOOL_NAME}"
+    template="${dev_info_template_fullpath}/${device_info_filename}"
+    dev_info_install_fullpath="${HOME}/.config/${TOOL_NAME}"
+    install_dir="${dev_info_install_fullpath}"
+    install_file="${install_dir}/${device_info_filename}"
+    [ ! -d "${install_dir}" ] && mkdir -v "${install_dir}"
+    [ ! -f "${install_file}" ] && cp -v "${template}" "${install_dir}"
 
-fn_kernel_config_droidian() {
-    ## Check and install required packages
-    arr_pack_reqs=( "linux-packaging-snippets" )
-
-    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
-
-    arr_kernel_version=()
-    arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
-    for version_str in ${arr_kernel_version_str[@]}; do
-	arr_kernel_version+=( $(cat ${KERNEL_DIR}/Makefile | grep ${version_str} | head -n 1 | awk '{print $3}') )
+    ## Search for empty vars in the device config file
+    for var in $(cat "${install_file}"); do
+        var_not_set=$(echo "${var}" | grep -v "#" | grep -v "=\"" | grep "=")
+	if [ -n "${var_not_set}" ]; then
+	   info "var_not_set = $var_not_set"
+	   ask "\"${var_not_set}\" name is not configured. Please type it: "
+           [ -n "${answer}" ] && sed -i \
+	       "s/${var_not_set}/${var_not_set}\"${answer}\"/g" "${install_file}"
+	fi
     done
-    KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
-    KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
-
-    ## Config debian packaging
-    KERNEL_INFO_MK_FILENAME="kernel-info.mk"
-    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
-    ## Create packaging dirs if not exist
-    arr_pack_dirs=( "debian" "debian/source" "debian/initramfs-overlay/scripts" "droidian/scripts" "droidian/common_fragments" )
-
-    ## Create droidian and debian packaging dirs
-    for pack_dir in ${arr_pack_dirs[@]}; do
-	[ -d "${pack_dir}" ] || mkdir -p -v "${pack_dir}"
-    done
-
-    ## Create kernel-info.mk from template
-    if [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ]; then
-    	src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
-    	dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
-    	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
-    	fn_cmd_on_container
-        ## Check if the kernel snippet was created
-        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
-
-	## Configuring the kernel version on kernel-info.mk
-	echo; echo "Configuring the kernel version on kernel-info.mk..."
-	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
-	replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
-	sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" \
-		${KERNEL_INFO_MK_FULLPATH_FILE}
-
-	## Miniml kernel-info.mk config
-	echo; read -p "Enter a device vendor name: " answer
-	sed -i "s/DEVICE_VENDOR.*/DEVICE_VENDOR\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-	echo; read -p "Enter a device model name: " answer
-	sed -i "s/DEVICE_MODEL.*/DEVICE_MODEL\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-	echo; read -p "Enter the full device name: " answer
-	sed -i "s/DEVICE_FULL_NAME.*/DEVICE_FULL_NAME\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-	echo; read -p "Enter the cmdline: " answer
-	sed -i "s/KERNEL_BOOTIMAGE_CMDLINE.*/KERNEL_BOOTIMAGE_CMDLINE\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-	echo; read -p "Enter the defconf file name: " answer
-	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-    fi
-
-    ## Check if one of the mínimal vars is unconfigured
-    ## TODO: Implement a for to check all the mínimal vars
-    kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
-    [ -n "${kernel_info_mk_is_configured}" ] && abort "kernel-info.mk is unconfigured!"
-
-    ## Set Kernel Info constants
-    DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
-    DEVICE_VENDOR=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_VENDOR' | awk -F' = ' '{print $2}')
-    DEVICE_MODEL=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL' | awk -F' = ' '{print $2}')
-    DEVICE_ARCH=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_ARCH' | awk -F' = ' '{print $2}')
-    DEVICE_FULL_NAME=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_FULL_NAME' | awk -F' = ' '{print $2}')
-
-    ## Create compat file
-    if [ ! -f "${KERNEL_DIR}/debian/compat" ]; then
-        echo "13" > ${KERNEL_DIR}/debian/compat
-    fi
-    ## Create format file
-    if [ ! -f "${KERNEL_DIR}/debian/source/format" ]; then
-        echo "3.0 (native)" > ${KERNEL_DIR}/debian/source/format
-    fi
-    ## Create rules file
-    if [ ! -f "${KERNEL_DIR}/debian/rules" ]; then
-	url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/rules
-        wget -O ${KERNEL_DIR}/debian/rules ${url}
-    fi
-    ## Create halium-hooks file
-    if [ ! -f "${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks" ]; then
-        url=https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/debian/initramfs-overlay/scripts/halium-hooks 
-        wget -O ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks "${url}"
-	sed -i "s/# Initramfs hooks for .*/# Initramfs hooks for ${DEVICE_FULL_NAME}/g" ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-        chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
-    fi
-
-    ## Add defconf fragments
-    DEFCONF_FRAGS_DIR="droidian"
-    DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
-    ## Get Droidian defconfig common_fragments
-    echo; echo "Checking for defconfig common fragments..."
-    DEFCONF_COMM_FRAGS_URL="https://raw.githubusercontent.com/droidian-devices/common_fragments/${KERNEL_BASE_VERSION_SHORT}-android"
-    arr_frag_files=( "debug.config" "droidian.config" "halium.config" )
-    for frag_file in ${arr_frag_files[@]}; do
-	## Get the file if not exist
-	[ -f "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" ] \
-	   || wget -O "${KERNEL_DIR}/${DEFCONF_COMM_FRAGS_DIR}/${frag_file}" \
-	   "${DEFCONF_COMM_FRAGS_URL}/${frag_file}" 2>&1  >/dev/null
-   done
-
-    ## Get Droidian defconfig prox1_fragment file and save as sample
-    DEFCONF_DEV_FRAG_URL="https://raw.githubusercontent.com/droidian-devices/linux-android-fxtec-pro1x/droidian/droidian/pro1x.config"
-    echo; echo "Checking for device defconfig fragment sample file..."
-    ## Get the file if not exist
-    [ ! -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" ] \
-        &&  wget -O "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" "${DEFCONF_DEV_FRAG_URL}"
-    ## Create the device fragment file if not exist
-    [ ! -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
-	&& cp -v "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" \
-	"${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config"
-
-    ## Sow vars defined
-    fn_print_vars
+    source "${dev_info_install_fullpath}/${device_info_filename}"
 }
 
-fn_build_package_on_container() {
-    # Configuring the build execution
-    build_script_name="build-package-with-droidian-releng.sh"
+fn_pkg_source_type_detection() {
+    ## Save start fullpath
+    START_DIR=$(pwd)
+    # Cerca un arxiu README de linux kernel
+    if [ -e "$START_DIR/README" ]; then
+	## check for git dir
+	fn_dir_is_git # Aborts if not
+	## Check if is kernel
+        IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
+        [ "${IS_KERNEL}" -eq '0' ] \
+	    && ABORT "No Linux kernel README file found in current dir."
+	INFO "Kernel source dir detected!"
+	docker_mode="kernel"
+	## Call kernel source config
+	fn_docker_config_kernel_source
+    elif [ -e "${START_DIR}/sparse" ]; then
+        ## check for git dir
+        fn_dir_is_git # Aborts if not
+	## Check for debian control
+	[ ! -f "debian/control" ] && abort "debian control file not found!"
+	## Set docker mode
+	docker_mode="package"
 
-    ## TODO Recreate the systemd wants links on the sparse directory
-    #[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
-    #./create-services-links.sh
-    #
-    #@ TODO: Copy the package files to the sparse dir
-    #/usr/lib/berb-droidian-build-docker-mgr/cp_pkg_files_2_sparse_dir.sh --run
-    #
-    ## Copy the  releng caller script to the 
-    ## TODO Put in a apt repo and install the package from de docker container
+        ## Get the package name from debian control
+        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 
-## TODO: DOCKER MGR CONTROL DEPS WITH ADAPT-HELPER
-## TODO: APT REPO JAAAA || CREAR DEV TEMPLATE PER A UNES KEYS GPG
-## TODO: Solucionar depends releng. Potser fer rebuild posant les meves deps
-## TODO: IMPROVE PATH DEL device_info
-## TODO: SOLUCIONAR INSTAL:LAR DOCKER MANAGER AL CONTAINER PER TENIR BUILD SCRIPT DIRECTE
-## TODO: 
-## TODO: SEPARAR FUNCIONS EN ARXIUS DIFERENTS
-## TODO: 
-## TODO: IMPLEMENTAR MODE ADAPTATION
-## TODO: SOLUCIÓ MÉS NETA PER VERSIÓ DE RELENG-BUILD-CHANGELOG
-## TODO: ORDENAR PART DEK KERNEL
+	## Get the package type
+	pkg_type=""
+	[ -z "${pkg_type}" ] \
+	    && [ -n "$(echo "${package_name}" | grep "^adaptation")" ] \
+	    && pkg_type="droidian_adapt"
+	[ -z "${pkg_type}" ] \
+	    && pkg_type="standard_pkg"
+	[ -z "${pkg_type}" ] \
+	    && abort "Not supported sparse dir detected!"
 
-    cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
-        ${SOURCES_FULLPATH}
-    chmod +x ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Build package on container
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
-    #missatge "Docker command is disabled for testing!"
-    #
-    ## Removing the build script from the package root dir
-    rm ${SOURCES_FULLPATH}/${build_script_name}
-
-    info "Build package finished."
-
-
-<< "ADAPTATION_IN_DEVELOPMENT"
-AQUI
-
-
-## Global config
-bkp_private_filename="backup-droidian-private-gpg-apt-${vendor}-${codename}.tar.gz"
-bkp_template_filename="backup-droidian-adaptation-fresh-template-${vendor}-${codename}.tar.gz"
-bkp_adapt_git_repo_filename="backup-droidian-adaptation-git-repo-${vendor}-${codename}.tar.gz"
-build_tools_droidian_fullpath="${START_DIR}/droidian-build-tools/bin"
-build_tools_src_fullpath="${START_DIR}/droidian-build-tools/bin/src/build-tools"
-build_private_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vendor}/${codename}/private"
-build_adaptation_fullpath="${START_DIR}/droidian-build-tools/bin/droidian/${vendor}/${codename}/packages/adaptation-${vendor}-${codename}"
-
-## Extract the full droidian-build-package with the template
-[ ! -f "${bkp_template_filename}" ] && abort "Build template ${bkp_template_filename} not found!"
-[ ! -d "${START_DIR}/droidian-build-tools" ] && cd ${START_DIR} && tar zxf "${bkp_template_filename}"
-## Update the suite to trixie on droidian-build-tools
-#sed -i 's/bookworm/trixie/g' ${build_tools_src_fullpath}/common.sh
-
-## create link to the adaptation git repo on the droidian-build-tools structure
-[ -d "${build_adaptation_fullpath}" ] && mv ${build_adaptation_fullpath} ${build_adaptation_fullpath}_bkp \
-    && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
-[ -L "${build_adaptation_fullpath}" ] && rm "${build_adaptation_fullpath}" \
-    && ln -s "${START_DIR}" "${build_adaptation_fullpath}"
-
-## Build the adaptation packages
-## by default arm64 host arch is defined. To use adm64 add "-b amd64" flag
-cd ${build_adaptation_fullpath} && ${build_tools_droidian_fullpath}/droidian-build-package -b amd64
-cd ${START_DIR}
-ADAPTATION_IN_DEVELOPMENT
-
-}
-
-fn_build_kernel_on_container() {
-    ## Call droidian kernel configuration function
-    fn_kernel_config_droidian
-
-    # Script creation to launch compilation inside the container.
-    build_script_name="compile-droidian-kernel.sh"
-    echo '#!/bin/bash' > $KERNEL_DIR/${build_script_name}
-    echo >> $KERNEL_DIR/${build_script_name}
-    #echo "export PATH=/bin:/sbin:$PATH" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export R=llvm-ar" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export NM=llvm-nm" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export OBJCOPY=llvm-objcopy" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export OBJDUMP=llvm-objdump" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export STRIP=llvm-strip" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export CC=clang" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export CROSS_COMPILE=aarch64-linux-gnu-" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    echo 'chmod +x /buildd/sources/debian/rules' >> $KERNEL_DIR/${build_script_name}
-    echo 'cd /buildd/sources' >> $KERNEL_DIR/${build_script_name}
-    echo 'rm -f debian/control' >> $KERNEL_DIR/${build_script_name}
-    echo 'debian/rules debian/control' >> $KERNEL_DIR/${build_script_name}
-    #echo 'source /buildd/sources/droidian/scripts/python-zlib-upgrade.sh' >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #fn_patch_kernel_snippet_python275b_path
-    #fn_patch_kernel_snippet_cross_32 # Requires "CROSS_COMPILE_32 = arm-linux-gnueabi-" on kernel-info.mk
-    #echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-
-    #echo "export PATH=\"/buildd/sources/droidian/python/2.7.5/bin:$PATH\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export LD_LIBRARY_PATH=\"/buildd/sources/droidian/python/2.7.5/bin\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export PYTHONHOME=\"/buildd/sources/droidian/python/2.7.5\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "export PYTHONPATH=\"/buildd/sources/droidian/python/2.7.5/lib/python2.7\"" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #echo "RELENG_HOST_ARCH=\"arm64\" /buildd/sources/releng-build-package-berb-edited" >> $KERNEL_DIR/compile-droidian-kernel.sh
-    #wget -O $KERNEL_DIR/releng-build-package-berb-edited \
-	#    https://raw.githubusercontent.com/droidian-berb/berb-droidian-kernel-build-docker-mgr/release/1.0.0-3/releng-build-package-berb-edited
-    #${SUDO} chmod u+x $KERNEL_DIR/releng-build-package-berb-edited
-
-    ## Releng command
-    echo >> $KERNEL_DIR/${build_script_name}
-    echo "RELENG_HOST_ARCH=${host_arch} releng-build-package" >> $KERNEL_DIR/${build_script_name}
-    ${SUDO} chmod u+x $KERNEL_DIR/${build_script_name}
-
-    # ask for disable install build deps in debian/kernel.mk if enabled.
-    #INSTALL_DEPS_IS_ENABLED=$(grep -c "^DEB_TOOLCHAIN")
-    #if [ "$INSTALL_DEPS_IS_ENABLED" -eq "1" ]; then
-    #	echo "" && read -p "Want you disable install build deps? Say \"n\" if not sure! y/n:  " OPTION
-    #	case $OPTION in
-    #		y)
-    #			fn_disable_install_deps_on_build
-    #			;;
-    #	esac
-    #fi
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
-    echo; echo "Compilation finished."
-
-    # fn_create_outputs_backup
+	## Call droidian build tools configurer for packages
+	source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
+	fn_docker_config_droidian_build_tools_package
+    else
+        abort "Not supported package dir found!"
+    fi
 }
 
 fn_create_outputs_backup() {
@@ -818,26 +480,18 @@ fn_print_vars() {
 
 fn_action_prompt() {
 ## Function to get a action
-    echo && echo "Action is required:"
-    echo && echo " 1 - Create container"
-    echo " 2 - Remove container"
-    echo; echo " 3 - Start container"
-    echo " 4 - Stop container"
-    echo; echo " 5 - Commit container"
-    echo "     Commits current container state."
-    echo "     Then creates new container from the commit."
-    echo "     If a image with tag latest is found, it will be used by default"
-    echo; echo " 6 - Install extra packages from apt."
-    echo "     Not fully working!"
-    echo; echo " 7 - Shell to container"
-    #	echo " 8 - Command to container" # only internal use
-    #	echo echo " 9 - Setup build env. OPTIONAL Implies option 3."
-    echo; echo "10 - Build kernel on container"
-    echo; echo "11 - Configure a Droidian kernel (android kernel)"
-    echo; echo "12 - Build package on container"
-    echo; echo "20 - Backup kernel build output relevant files"
-    echo; read -p "Select an option: " OPTION
-    case $OPTION in
+    INFO "Action is required:"
+    INFO "  1 - Create container            2 - Remove container"
+    info "  3 - Start container             4 - Stop container"
+    info "  5 - Commit container"
+    info "  7 - Shell to container          8 - Command to container"
+    INFO " 09 - Config Droidian kernel     10 - Build kernel on container"
+    info " 11 - Config package             12 - Build package on container"
+    info " 13 - Config adaptation          14 - Build adaptation on container"
+    #INFO " 6 - Install required apt pkgs on container"
+    #INFO  "20 - Backup kernel build output relevant files"
+    ASK "Select an option: "
+    case ${answer} in
 	1)
 	    ACTION="create"
 	    ;;
@@ -853,26 +507,32 @@ fn_action_prompt() {
 	5)
 	    ACTION="commit-container"
 	    ;;
-	6)
-	    ACTION="install-apt-extra"
-	    ;;
+	#6)
+	 #   ACTION="install-apt-extra"
+	 #   ;;
 	7)
 	    ACTION="shell-to"
 	    ;;
-#	8)
-#	    ACTION="command-to"
-#	    ;;
-#	9)
-#	    ACTION="setup-build-env"
-#	    ;;
+	8)
+	    ACTION="command-to"
+	    ;;
+	9)
+	    ACTION="config-droidian-kernel"
+	    ;;
 	10)
 	    ACTION="build-kernel-on-container"
 	    ;;
 	11)
-	    ACTION="config-droidian-kernel"
+	    ACTION="config-droidian-package"
 	    ;;
 	12)
 	    ACTION="build-package-on-container"
+	    ;;
+	13)
+	    ACTION="config-droidian-adaptation"
+	    ;;
+	14)
+	    ACTION="build-adaptation-on-container"
 	    ;;
 	20)
 	    ACTION="create-outputs-backup"
@@ -890,13 +550,13 @@ fn_action_prompt() {
 fn_ip_forward_activa
 fn_configura_sudo
 fn_check_bash_ver
-fn_build_env_base_paths_config
+fn_pkg_source_type_detection
 fn_docker_global_config
 fn_action_prompt
 #fn_set_container_commit_if_exists
 
 #fn_print_vars
-echo
+#echo
 
 ## Execute action on container name
 if [ "$ACTION" == "create" ]; then
@@ -909,20 +569,24 @@ elif [ "$ACTION" == "stop" ]; then
     fn_stop_container
 elif [ "$ACTION" == "shell-to" ]; then
     fn_shell_to_container
-#elif [ "$ACTION" == "command-to" ]; then
-#   fn_cmd_on_container
-#elif [ "$ACTION" == "setup-build-env" ]; then
-#   fn_build_env_base_paths_config
-elif [ "$ACTION" == "config-droidian-kernel" ]; then
-    fn_kernel_config_droidian
+elif [ "$ACTION" == "command-to" ]; then
+   fn_cmd_on_container
 elif [ "$ACTION" == "install-apt-extra" ]; then
     fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
     fn_commit_container
+elif [ "$ACTION" == "config-droidian-kernel" ]; then
+    fn_kernel_config_droidian
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
     fn_build_kernel_on_container
+elif [ "$ACTION" == "config-droidian-package" ]; then
+    fn_config
 elif [ "$ACTION" == "build-package-on-container" ]; then
     fn_build_package_on_container
+elif [ "$ACTION" == "config-droidian-adaptation" ]; then
+    fn_config
+elif [ "$ACTION" == "build-adaptation-on-container" ]; then
+    fn_build_adaptation_on_container
 elif [ "$ACTION" == "create-outputs-backup" ]; then
     fn_create_outputs_backup
 else
