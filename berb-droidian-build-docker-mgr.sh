@@ -167,7 +167,7 @@ fn_create_container() {
 	&& IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 
     if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
-        INFO "Creating docher container \"${CONTAINER_NAME}\""
+        INFO "Creating docker container \"${CONTAINER_NAME}\""
 	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" imgage..." 
 	if [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
 	    docker -v create --name ${CONTAINER_NAME} \
