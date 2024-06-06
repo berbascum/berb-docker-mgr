@@ -1,12 +1,13 @@
 #!/bin/bash
+
+## Script to copy the package files to the sparse dir
 #
 # Upstream-Name: berb-droidian-build-docker-mgr
 # Source: https://github.com/droidian-berb/berb-droidian-build-docker-mgr
-  ## Script to copy the package files to the sparse dir
-
+#
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
-
+#
 # BSD 3-Clause License
 #
 #
@@ -53,9 +54,7 @@ fn_main_exec() {
 
     ## Copy files on sparse
     cp -v ${package_name}.sh sparse/usr/bin/${package_name}
-    cp -v libs/device_info.sh  sparse/usr/lib/${package_name}/
-    cp -v libs/cp_pkg_files_2_sparse_dir.sh  sparse/usr/lib/${package_name}/
-    cp -v libs/build-package-with-droidian-releng.sh  sparse/usr/lib/${package_name}/
+    cp -v libs/*  sparse/usr/lib/${package_name}/
 }
 
 ## Main execution
