@@ -1,4 +1,4 @@
-berb-droidian-build-docker-mgr (1.0.0.4+git20240604182216.ed46821.develop) develop; urgency=medium
+berb-droidian-build-docker-mgr (2.0.0.1+git20240606015951.5c8f711.develop) develop; urgency=medium
 
   [ berbascum ]
   * Initial commit
@@ -75,9 +75,17 @@ berb-droidian-build-docker-mgr (1.0.0.4+git20240604182216.ed46821.develop) devel
   * Update: Remove package_version from the build output dir on the main script
   * Fix: File debian<package>.dirs was need to be fixed after the package rename
   * Enable: Run build script on the container after some testing
+  * Update: debian/changelog
+  * Fixes: Minor fixes while testing
+  * Update: File .gitignore
+  * Update: Doc todo list on main script
+  * Revision: General visual revision of the global and container management functions
+  * Start: version 2.0.0.1 where the script will be splitted to different plugins
+  * New: Bash scripts to implement the plugins splitting
+  * Update: Splitting phase 1 is finished and starts the testing phase
 
   [ Berbascum ]
   * Add packages to apt install feature and removed gcc-4.9 packages from the list
 
- -- berbascum <berbascum@ticv.cat>  Tue, 04 Jun 2024 20:22:16 +0200
+ -- berbascum <berbascum@ticv.cat>  Thu, 06 Jun 2024 03:59:51 +0200
 
