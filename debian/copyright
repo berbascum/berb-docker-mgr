@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: berb-droidian-kernel-build-docker-mgr
-Source: https://github.com/droidian-berb/berb-droidian-build-docker-mgr
+Upstream-Name: berb-docker-mgr
+Source: https://github.com/berbascum/berb-docker-mgr
 
 Files: *
 Copyright: 2022 berbascum <berbascum@ticv.cat>

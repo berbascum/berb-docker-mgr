@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ## Script to manage docker containers
-
-# Upstream-Name: berb-droidian-build-docker-mgr
-# Source: https://github.com/droidian-berb/berb-droidian-build-docker-mgr
+#
+# Upstream-Name: berb-docker-mgr
+# Source: https://github.com/berbascum/berb-docker-mgr
 #
 # Copyright (C) 2022 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
