@@ -47,7 +47,8 @@ fn_main_exec() {
 
     ## Create dirs on sparse
     debian_package_dirs_file_relpath="debian/${package_name}.dirs"
-    [ ! -f "${debian_package_dirs_file_relpath}" ] && error "debian package dirs file not found!"
+    [ ! -f "${debian_package_dirs_file_relpath}" ] \
+	&& error "debian package dirs file not found!"
     for dir in $(cat ${debian_package_dirs_file_relpath}); do
         [ ! -d "sparse${dir}" ] && mkdir -p -v sparse${dir}
     done
@@ -55,6 +56,8 @@ fn_main_exec() {
     ## Copy files on sparse
     cp -v ${package_name}.sh sparse/usr/bin/${package_name}
     cp -v libs/*  sparse/usr/lib/${package_name}/
+    cp -v conf/*  sparse/etc/${package_name}/
+    cp -v conf_templates/*  sparse/usr/share/${package_name}/
 }
 
 ## Main execution

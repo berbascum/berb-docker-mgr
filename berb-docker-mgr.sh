@@ -46,12 +46,26 @@ TESTED_BASH_VER='5.2.15'
 ## General functions ##
 #######################
 fn_bdm_global_conf() {
-    lib_fullpath="/usr/lib/${TOOL_NAME}"
+    LIBS_FULLPATH="/usr/lib/${TOOL_NAME}"
+    TEMPLATES_FULLPATH="/usr/share/${TOOL_NAME}"
     LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
     . /usr/lib/berb-bash-libs/bbl_general_lib.sh
     . /usr/lib/berb-bash-libs/bbl_net_lib.sh
     fn_bbgl_config_log
     fn_bbgl_config_log_level $@
+}
+
+fn_bdm_user_conf_file_install() {
+    USER_CONF_FULLPATH="${HOME}/.config/${TOOL_NAME}"
+    USER_CONF_FILENAME="bdm-user.conf"
+    [ ! -d "${USER_CONF_FULLPATH}" ] && mkdir "${USER_CONF_FULLPATH}" \
+	&& DEBUG "Creating dir: ${USER_CONF_FULLPATH}"
+    if [ ! -f "${USER_CONF_FULLPATH}/${USER_CONF_FILENAME}" ]; then
+	cp "${TEMPLATES_FULLPATH}/${USER_CONF_FILENAME}" "${USER_CONF_FULLPATH}"
+	DEBUG "Copying user conf file to: ${USER_CONF_FULLPATH}"
+    fi
+}
+fn_bdm_user_conf_file_load() {
 }
 
 ######################
@@ -382,9 +396,9 @@ fn_bdm_global_conf $@
 fn_bbnl_ip_forward_activa
 fn_bbgl_configura_sudo
 fn_bbgl_check_bash_ver
+## Load config file
+fn_bdm_user_conf_file_install
 exit
-## Load device info config
-fn_device_info_load
 fn_pkg_source_type_detection
 fn_docker_global_config
 fn_action_prompt
