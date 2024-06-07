@@ -37,11 +37,22 @@
 #################
 ## Header vars ##
 #################
-TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
+export TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
 #TOOL_VERSION="2.0.0.1"
 #TOOL_CHANNEL="develop"
 TESTED_BASH_VER='5.2.15'
 
+#######################
+## General functions ##
+#######################
+fn_bdm_global_conf() {
+    lib_fullpath="/usr/lib/${TOOL_NAME}"
+    LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
+    . /usr/lib/berb-bash-libs/bbl_general_lib.sh
+    fn_bbl_config_log
+    fn_bbl_config_log_level $@
+    exit
+}
 
 ######################
 ## Docker functions ##
@@ -367,6 +378,7 @@ fn_action_prompt() {
 ## Start script execution ##
 ############################
 ## Configuration
+fn_bdm_global_conf $@
 fn_ip_forward_activa
 fn_configura_sudo
 fn_check_bash_ver
