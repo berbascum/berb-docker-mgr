@@ -33,25 +33,98 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-####################
-## Info functions ##
-####################
-info() { echo "$*"; }
-INFO() { echo; echo "$*"; }
-warn() { echo "$*"; }
-WARN() { echo; echo "$*"; }
-debug() { echo "$*"; }
-DEBUG() { echo; echo "$*"; }
-abort() { echo "$*"; exit 10; }
-ABORT() { echo; echo "$*"; exit 10; }
-error() { echo "$*"; exit 1; }
-ERROR() { echo; echo "$*"; exit 1; }
-missatge() {  echo "$*"; }
-missatge_return() { echo; echo "$*"; return 0; }
+
+## Config log
+fn_bbsl_config_log() {
+    ## Prepare log file
+    [ -z "${LOG_FULLPATH}" ] && LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
+    [ ! -d "${LOG_FULLPATH}" ] && mkdir -p "${LOG_FULLPATH}"
+    LOG_FILE="${TOOL_NAME}.log"
+    echo > "${LOG_FULLPATH}/${LOG_FILE}"
+}
+
+#####################
+## Print functions ##
+#####################
+info() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_INFO ]]; then
+        echo "INFO: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+INFO() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_INFO ]]; then
+        echo; echo "INFO: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+warn() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_WARN ]]; then
+        echo "WARN: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+WARN() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_WARN ]]; then
+        echo; echo "WARN: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+debug() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_DEBUG ]]; then
+        echo "DEBUG: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+DEBUG() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_DEBUG ]]; then
+        echo; echo "DEBUG: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+abort() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_ABORT ]]; then
+        echo "$*"; exit 10 "ABORT: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+ABORT() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_ABORT ]]; then
+        echo; echo "$*"; exit 10 "ABORT: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+error() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_ERROR ]]; then
+        echo "$*"; exit 1 "ERROR: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
+ERROR() {
+    if [[ $LOG_LEVEL -le $LOG_LEVEL_ERROR ]]; then
+        echo; echo "$*"; exit 1 "ERROR: $*" | tee -a "${LOG_FULLPATH}/${LOG_FILE}" >&2
+    fi
+}
 ask() { read -p "$*" answer; }
 ASK() { echo; read -p "$*" answer; }
 pause() { read -p "$*"; }
 PAUSE() { echo; read -p "$*"; }
+
+########################
+## loglevel functions ##
+########################
+
+fn_bbl_config_log_level() {
+    ## Set the log levels
+    readonly LOG_LEVEL_DEBUG=0
+    readonly LOG_LEVEL_INFO=1
+    readonly LOG_LEVEL_WARN=2
+    readonly LOG_LEVEL_ABORT=3
+    readonly LOG_LEVEL_ERROR=4
+    ## Search for the log-level flag in the arguments
+    for flag in $@; do
+        log_level_flag=$(echo "${flag}" | grep "\-\-log\-level")
+        if [ -n "${log_level_flag}" ]; then
+            LOG_LEVEL=$(echo "${log_level_flag}" | awk -F'=' '{print $2}')
+	    DEBUG "Log level flag = \"${LOG_LEVEL}\" found"
+	    break
+        fi
+    done
+    ## Set the default log-level if not defined yet
+    [ -z "${LOG_LEVEL}" ] && LOG_LEVEL=${LOG_LEVEL_INFO}
+
+}
 
 #######################
 ## Control functions ##
