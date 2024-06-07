@@ -46,14 +46,19 @@ TESTED_BASH_VER='5.2.15'
 ## General functions ##
 #######################
 fn_bdm_global_conf() {
+    ## Path vars
     # CONF_MAIN_ARXIU=""
     LIBS_FULLPATH="/usr/lib/${TOOL_NAME}"
     TEMPLATES_FULLPATH="/usr/share/${TOOL_NAME}"
     LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
+    ## Load libs
     . /usr/lib/berb-bash-libs/bbl_general_lib.sh
     . /usr/lib/berb-bash-libs/bbl_net_lib.sh
+    ## Config log
     fn_bbgl_config_log
+    ## Config log level
     fn_bbgl_config_log_level $@
+    ## Check for --plugin flag
 }
 
 fn_bdm_user_conf_file_install() {
@@ -410,8 +415,8 @@ fn_bbgl_check_bash_ver
 ## Load config files
 fn_bdm_user_conf_file_install
 fn_bdm_user_conf_file_ask_empty_vars
-exit
 fn_bdm_user_conf_file_load
+info "host_arch = $host_arch"
 exit
 fn_pkg_source_type_detection
 fn_docker_global_config
