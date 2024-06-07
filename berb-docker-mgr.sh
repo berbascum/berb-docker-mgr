@@ -59,6 +59,12 @@ fn_bdm_global_conf() {
     ## Config log level
     fn_bbgl_config_log_level $@
     ## Check for --plugin flag
+    fn_bbgl_check_args_search_flag "plugin" $@
+    debug "FLAG_FOUND_VALUE = ${FLAG_FOUND_VALUE}"
+    if [ -n "${FLAG_FOUND_VALUE}" ]; then
+        plugin_enabled="${FLAG_FOUND_VALUE}"
+	debug "plugin_enabled = ${plugin_enabled}"
+    fi
 }
 
 fn_bdm_user_conf_file_install() {
@@ -67,10 +73,10 @@ fn_bdm_user_conf_file_install() {
     USER_CONF_MAIN_FULLPATH_FILENAME="${USER_CONF_FULLPATH}/${USER_CONF_MAIN_FILENAME}"
     ## If the main conf user file  not exist copy from template
     [ ! -d "${USER_CONF_FULLPATH}" ] && mkdir "${USER_CONF_FULLPATH}" \
-	&& DEBUG "Creating dir: ${USER_CONF_FULLPATH}"
+	&& debug "Creating dir: ${USER_CONF_FULLPATH}"
     if [ ! -f "${USER_CONF_MAIN_FULLPATH_FILENAME}" ]; then
 	cp "${TEMPLATES_FULLPATH}/${USER_CONF_MAIN_FILENAME}" "${USER_CONF_FULLPATH}"
-	DEBUG "Copying user main conf file to: ${USER_CONF_FULLPATH}"
+	debug "Copying user main conf file to: ${USER_CONF_FULLPATH}"
     fi
 }
 
