@@ -70,7 +70,8 @@ fn_bdm_user_conf_file_install() {
 }
 
 fn_bdm_user_conf_file_ask_empty_vars() {
-
+    section="global-vars"
+    fn_bbgl_parse_file_section USER_CONF_MAIN "${section}" "ask_empty_vars"
 }
 
 fn_bdm_user_conf_file_load() {
@@ -408,7 +409,6 @@ fn_bbgl_configura_sudo
 fn_bbgl_check_bash_ver
 ## Load config files
 fn_bdm_user_conf_file_install
-exit
 fn_bdm_user_conf_file_ask_empty_vars
 exit
 fn_bdm_user_conf_file_load
