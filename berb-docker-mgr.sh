@@ -49,9 +49,9 @@ fn_bdm_global_conf() {
     lib_fullpath="/usr/lib/${TOOL_NAME}"
     LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
     . /usr/lib/berb-bash-libs/bbl_general_lib.sh
-    fn_bbl_config_log
-    fn_bbl_config_log_level $@
-    exit
+    . /usr/lib/berb-bash-libs/bbl_net_lib.sh
+    fn_bbgl_config_log
+    fn_bbgl_config_log_level $@
 }
 
 ######################
@@ -379,9 +379,10 @@ fn_action_prompt() {
 ############################
 ## Configuration
 fn_bdm_global_conf $@
-fn_ip_forward_activa
-fn_configura_sudo
-fn_check_bash_ver
+fn_bbnl_ip_forward_activa
+fn_bbgl_configura_sudo
+fn_bbgl_check_bash_ver
+exit
 ## Load device info config
 fn_device_info_load
 fn_pkg_source_type_detection
