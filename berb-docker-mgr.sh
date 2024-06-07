@@ -46,6 +46,7 @@ TESTED_BASH_VER='5.2.15'
 ## General functions ##
 #######################
 fn_bdm_global_conf() {
+    # CONF_MAIN_ARXIU=""
     LIBS_FULLPATH="/usr/lib/${TOOL_NAME}"
     TEMPLATES_FULLPATH="/usr/share/${TOOL_NAME}"
     LOG_FULLPATH="${HOME}/logs/${TOOL_NAME}"
@@ -57,15 +58,24 @@ fn_bdm_global_conf() {
 
 fn_bdm_user_conf_file_install() {
     USER_CONF_FULLPATH="${HOME}/.config/${TOOL_NAME}"
-    USER_CONF_FILENAME="bdm-user.conf"
+    USER_CONF_MAIN_FILENAME="bdm-user-main.conf"
+    USER_CONF_MAIN_FULLPATH_FILENAME="${USER_CONF_FULLPATH}/${USER_CONF_MAIN_FILENAME}"
+    ## If the main conf user file  not exist copy from template
     [ ! -d "${USER_CONF_FULLPATH}" ] && mkdir "${USER_CONF_FULLPATH}" \
 	&& DEBUG "Creating dir: ${USER_CONF_FULLPATH}"
-    if [ ! -f "${USER_CONF_FULLPATH}/${USER_CONF_FILENAME}" ]; then
-	cp "${TEMPLATES_FULLPATH}/${USER_CONF_FILENAME}" "${USER_CONF_FULLPATH}"
-	DEBUG "Copying user conf file to: ${USER_CONF_FULLPATH}"
+    if [ ! -f "${USER_CONF_MAIN_FULLPATH_FILENAME}" ]; then
+	cp "${TEMPLATES_FULLPATH}/${USER_CONF_MAIN_FILENAME}" "${USER_CONF_FULLPATH}"
+	DEBUG "Copying user main conf file to: ${USER_CONF_FULLPATH}"
     fi
 }
+
+fn_bdm_user_conf_file_ask_empty_vars() {
+
+}
+
 fn_bdm_user_conf_file_load() {
+    section="global-vars"
+    fn_bbgl_parse_file_section USER_CONF_MAIN "${section}" "load_section"
 }
 
 ######################
@@ -396,8 +406,12 @@ fn_bdm_global_conf $@
 fn_bbnl_ip_forward_activa
 fn_bbgl_configura_sudo
 fn_bbgl_check_bash_ver
-## Load config file
+## Load config files
 fn_bdm_user_conf_file_install
+exit
+fn_bdm_user_conf_file_ask_empty_vars
+exit
+fn_bdm_user_conf_file_load
 exit
 fn_pkg_source_type_detection
 fn_docker_global_config
