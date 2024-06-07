@@ -1,3 +1,4 @@
 /usr/bin
+/etc/berb-docker-mgr
 /usr/lib/berb-docker-mgr
 /usr/share/berb-docker-mgr
