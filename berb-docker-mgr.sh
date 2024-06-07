@@ -43,69 +43,6 @@ TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
 TESTED_BASH_VER='5.2.15'
 
 
-####################
-## Info functions ##
-####################
-
-info() { echo "$*"; }
-INFO() { echo; echo "$*"; }
-warn() { echo "$*"; }
-WARN() { echo; echo "$*"; }
-debug() { echo "$*"; }
-DEBUG() { echo; echo "$*"; }
-abort() { echo "$*"; exit 10; }
-ABORT() { echo; echo "$*"; exit 10; }
-error() { echo "$*"; exit 1; }
-ERROR() { echo; echo "$*"; exit 1; }
-missatge() {  echo "$*"; }
-missatge_return() { echo; echo "$*"; return 0; }
-ask() { read -p "$*" answer; }
-ASK() { echo; read -p "$*" answer; }
-pause() { read -p "$*"; }
-PAUSE() { echo; read -p "$*"; }
-
-#######################
-## Control functions ##
-#######################
-fn_check_bash_ver() {
-    bash_ver=$(bash --version | head -n 1 \
-	| awk '{print $4}' | awk -F'(' '{print $1}' | awk -F'.' '{print $1"."$2"."$3}')
-    IFS_BKP=$IFS
-    IFS='.' read -r vt_major vt_minor vt_patch <<< "${TESTED_BASH_VER}"
-    IFS='.' read -r v_major v_minor v_patch <<< "${bash_ver}"
-    IFS=$IFS_BKP
-    if [[ $v_major -lt $vt_major ]] || \
-           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -lt $vt_minor ]]) || \
-           ([[ $v_major -eq $vt_major ]] && [[ $v_minor -eq $vt_minor ]] \
-	       && [[ $v_patch -lt $vt_patch ]]); then
-    	clear
-        WARN "Bash version detected is lower than the tested version"
-        warn "If errors are found, try upgrading bash to \"${TESTED_BASH_VER}\" version"
-	pause "Press Inro to continue"
-    else
-        INFO "Bash version requirements are fine"
-    fi
-}
-
-
-######################
-## Config functions ##
-######################
-fn_configura_sudo() { [ "$USER" != "root" ] && SUDO='sudo'; }
-
-fn_ip_forward_activa() {
-    ## Activa ipv4_forward (requerit per xarxa containers) i reinicia docker.
-    ## És la primera funció que crida l'script
-    FORWARD_ES_ACTIVAT=$(cat /proc/sys/net/ipv4/ip_forward)
-    if [ "$FORWARD_ES_ACTIVAT" -eq "0" ]; then
-  	echo "" && echo "Activant ip4_forward..."
-	${SUDO} sysctl -w net.ipv4.ip_forward=1
-	${SUDO} systemctl restart docker
-    else
-	echo && echo "ip4_forward prèviament activat!"
-    fi
-}
-
 ######################
 ## Docker functions ##
 ######################
@@ -323,7 +260,7 @@ fn_install_apt() {
 }
 
 fn_install_apt_req() {
-    APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
+    APT_INSTALL_REQ=""
     fn_install_apt "${APT_INSTALL_REQ}"
 }
 
@@ -340,134 +277,6 @@ fn_install_apt_extra() {
 ############################
 ## Config build functions ##
 ############################
-fn_dir_is_git() {
-    ## Abort if no .git directory found
-    [ ! -d ".git" ] && ABORT "The current dir should be a git repo!"
-}
-
-fn_debian_control_found() {
-    ## Abort if no debian/control file found
-    [ ! -f "debian/control" ] && ABORT "debian control file not found!"
-}
-
-fn_device_info_load() {
-    ## Check file in the user home .config dir
-    device_info_filename="device_info.sh"
-    dev_info_template_fullpath="/usr/lib/${TOOL_NAME}"
-    template="${dev_info_template_fullpath}/${device_info_filename}"
-    dev_info_install_fullpath="${HOME}/.config/${TOOL_NAME}"
-    install_dir="${dev_info_install_fullpath}"
-    install_file="${install_dir}/${device_info_filename}"
-    [ ! -d "${install_dir}" ] && mkdir -v "${install_dir}"
-    [ ! -f "${install_file}" ] && cp -v "${template}" "${install_dir}"
-
-    ## Search for empty vars in the device config file
-    for var in $(cat "${install_file}"); do
-        var_not_set=$(echo "${var}" | grep -v "#" | grep -v "=\"" | grep "=")
-	if [ -n "${var_not_set}" ]; then
-	   info "var_not_set = $var_not_set"
-	   ask "\"${var_not_set}\" name is not configured. Please type it: "
-           [ -n "${answer}" ] && sed -i \
-	       "s/${var_not_set}/${var_not_set}\"${answer}\"/g" "${install_file}"
-	fi
-    done
-    source "${dev_info_install_fullpath}/${device_info_filename}"
-}
-
-fn_pkg_source_type_detection() {
-    ## Save start fullpath
-    START_DIR=$(pwd)
-    ## check for git dir
-    fn_dir_is_git # Abort if not
-    ## Check for debian control
-    fn_debian_control_found # Abort if not
-    ## Get the package name from debian control
-    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-
-    # Cerca un arxiu README de linux kernel
-    if [ -e "$START_DIR/README" ]; then
-	## Check if is kernel
-        IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-        [ "${IS_KERNEL}" -eq '0' ] \
-	    && ABORT "No Linux kernel README file found in current dir."
-        APT_INSTALL_EXTRA="releng-tools"
-	INFO "Kernel source dir detected!"
-	docker_mode="kernel"
-	## Load berb-build-droidian-kernel.sh
-	source  /usr/lib/${TOOL_NAME}/berb-build-droidian-kernel.sh
-	## Call kernel source config function
-	fn_docker_config_kernel_source
-    elif [ -e "${START_DIR}/sparse" ]; then
-	## Set docker mode
-	docker_mode="package"
-	## Get the package type
-	pkg_type=""
-	if [ -z "${pkg_type}" ]; then
-	   if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
-	       pkg_type="droidian_adapt"
-               APT_INSTALL_EXTRA="releng-tools"
-	       INFO "Package type detected: \"${pkg_type}\""
-           else
-	       pkg_type="standard_pkg"
-               APT_INSTALL_EXTRA="releng-tools"
-	       INFO "Package type detected: \"${pkg_type}\""
-	       ## Source the corresponding pkg_type lib
-	       source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
-	   fi
-	   ## Source the build droidian package lib
-	   source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
-           ## Configure the droidian package source
-           fn_docker_config_droidian_package_source
-        fi
-    else
-        abort "Not supported package dir found!"
-    fi
-}
-
-fn_create_outputs_backup() {
-    ## TODO: Needs a full revision
-    ## Moving output deb files to $PACKAGES_DIR/debs
-    echo && echo Moving output deb files to $KERNEL_BUILD_OUT_DEBS_PATH
-    mv $PACKAGES_DIR/*.deb $KERNEL_BUILD_OUT_DEBS_PATH
-    ## Moving output log files to $PACKAGES_DIR/logs
-    echo && echo Moving output log files to $KERNEL_BUILD_OUT_LOGS_PATH
-    mv $PACKAGES_DIR/*.build* $KERNEL_BUILD_OUT_LOGS_PATH
-
-    ## Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
-    arr_OUT_DIR_FILES=( \
-	'boot.img' 'dtbo.img' 'initramfs.gz' 'recovery*' 'target-dtb' 'vbmeta.img' 'arch/arm64/boot/Image.gz' )
-    echo && echo "Copyng out/KERNL_OBJ relevant files to $PACKAGES_DIR/other..."
-    cd $KERNEL_BUILD_OUT_KOBJ_PATH
-    for i in ${arr_OUT_DIR_FILES[@]}; do
- 	cp -a $i $KERNEL_BUILD_OUT_OTHER_PATH
-    done
-    cd $START_DIR
-
-    ## Copyng device defconfig file to PACKAGES_DIR..."
-    echo && echo " Copyng $DEVICE_DEFCONFIG_FILE file to $PACKAGES_DIR..."
-    cp -a "arch/$DEVICE_ARCH/configs/$DEVICE_DEFCONFIG_FILE" $PACKAGES_DIR
-
-    ## Copyng debian dir to final outputs dir..."
-    arr_DEBIAN_FILES=( \
-	'debian/copyright' 'debian/compat' 'debian/kernel-info.mk' 'debian/rules' \
-	'debian/source' 'debian/initramfs-overlay' )
-    echo && echo "Copying debian dir to $KERNEL_BUILD_OUT_DEBS_PATH..."
-    cp -a debian/* $KERNEL_BUILD_OUT_DEBS_PATH/
-    for i in ${arr_DEBIAN_FILES[@]}; do
- 	cp -a $KERNEL_BUILD_OUT_DEBS_PATH/$i debian/
-    done
-    ## Make a tar.gz from PACKAGES_DIR
-    echo && echo "Creating $BACKUP_FILE_NOM from $PACKAGES_DIR"
-    cd $SOURCES_FULLPATH
-    tar zcvf $BACKUP_FILE_NOM $PACKAGES_DIR
-    if [ "$?" -eq '0' ]; then
- 	echo && echo "Backup $BACKUP_FILE_NOM created on the parent dir"
-    else
-	echo && echo "Backup $BACKUP_FILE_NOM failed!!!"
-    fi
-    cd $START_DIR
-}
-
 fn_print_vars() {
     ## Prints kernel paths
     echo && echo "Config defined:"

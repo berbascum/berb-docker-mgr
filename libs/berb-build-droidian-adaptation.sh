@@ -34,6 +34,24 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+fn_install_apt_droidian_repos() {
+    APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
+    fn_install_apt "${APT_INSTALL_REQ}"
+}
 
+fn_device_info_load() {
+    ## Check file in the user home .config dir
+    device_info_filename="device_info.sh"
+    dev_info_template_fullpath="/usr/lib/${TOOL_NAME}"
+    template="${dev_info_template_fullpath}/${device_info_filename}"
+    dev_info_install_fullpath="${HOME}/.config/${TOOL_NAME}"
+    install_dir="${dev_info_install_fullpath}"
+    install_file="${install_dir}/${device_info_filename}"
+    [ ! -d "${install_dir}" ] && mkdir -v "${install_dir}"
+    [ ! -f "${install_file}" ] && cp -v "${template}" "${install_dir}"
+
+fn_ask_write_not_set_vars_in_file
+
+}
 
 
