@@ -113,6 +113,15 @@ fn_bdm_load_plugin() {
 ## Docker functions ##
 ######################
 fn_bdm_docker_global_config() {
+    arr_actions_base=( \
+	"create container" \
+	"remove container" \
+	"start container" \
+	"stop container" \
+	"shell to container" \
+	"command to container" \
+	"commit container" \
+    )
 << "DEFINED_IN_PLUGINS"
     ## Docker constants
     CONTAINER_BASE_NAME="droidian-build-env-${package_name}"
@@ -127,7 +136,7 @@ DEFINED_IN_PLUGINS
     docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
     #if [ "${docker_how_many_imgs}" -eq "0" ]; then
 	IMAGE_NAME="${IMAGE_BASE_NAME}"
-	info "CONTAINER_BASE_NAME = $CONTAINER_BASE_NAME"
+	debug "CONTAINER_BASE_NAME = $CONTAINER_BASE_NAME"
         CONTAINER_NAME="$CONTAINER_BASE_NAME"
 	IMAGE_TAG="${IMAGE_BASE_TAG}"
 	#return 0
@@ -243,9 +252,9 @@ fn_remove_container() {
 	INFO "Container $CONTAINER_NAME not exists..."
 	echo
     else
-	PAUSE "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? " RM_CONT
+	ASK "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? "
     fi
-    if [ "$RM_CONT" == "yes" ]; then
+    if [ "${answer}" == "yes" ]; then
  	INFO "Removing container..."
 	fn_stop_container
 	docker rm $CONTAINER_ID
