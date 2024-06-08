@@ -58,6 +58,12 @@ fn_update_main_src_file_version_var() {
 }
 
 fn_set_last_tag() {
+    ## First get how mani tags are found to construct the changelog by blocks
+    arr_git_tags=( $(git tag) )
+    info "arr_git_tags:"
+    primtf '%s\n' ${arr_git_tags[@]}
+    exit
+
     ## Check if the has commit has a tag
     last_commit_tag="$(git tag --contains "HEAD")"
     if [ -z "${last_commit_tag}" ]; then
@@ -78,7 +84,6 @@ fn_set_last_tag() {
             last_commit_tag="${answer}"
 	fi
     fi
-    fn_update_main_src_file_version_var
 }
 
 fn_get_package_info() {

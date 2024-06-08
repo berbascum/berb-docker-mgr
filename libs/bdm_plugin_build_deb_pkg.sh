@@ -51,7 +51,7 @@ fn_docker_plugin_conf() {
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     fn_bdm_docker_global_config
-    arr_actions_plugin=( "exit" "build debian package" )
+    arr_actions_plugin=( "exit" "plugin build debian package" )
     declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 }
 
@@ -66,14 +66,18 @@ done
 
 
 
-exit
 ## Load global conf
 #fn_config_global
 ## Check the git workdir status and abort if not clean
 fn_bblgit_workdir_status_check
 ## Check if the last commit has a tag
 fn_set_last_tag
+
+exit
+fn_update_main_src_file_version_var
 ## Get package info
 fn_get_package_info
+
+fn_changelog_full_gen
 ## Call releng-build-package
 fn_build_package

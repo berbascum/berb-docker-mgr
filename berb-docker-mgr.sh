@@ -178,15 +178,16 @@ fn_exit() {
 fn_bdm_docker_menu_fzf() {
     fn_bssf_menu_fzf "action" "single"
     ACTION=$(echo "${item_selected}" | sed 's/ /_/g')
-    [ "${ACTION}" == "exit" ] && exit="True"
-    debug "ACTION = ${ACTION}"
-
+    debug "Action selected = \"${ACTION}\""
+    debug "Action fn selected = \"${FN_ACTION}\""
+    ## If action = exit set exit=True and leave from function
+    [ "${ACTION}" == "exit" ] && exit="True" && return
+    ## If it's a plugin action set exit="True" and leave from function
+    action_is_plugin$(echo "${ACTION}" | grep "plugin")
+    [ -n "${action_is_plugin}" ] && return
+    ## Call the docker action
     FN_ACTION="fn_${ACTION}"
-    info "Action selected = \"${ACTION}\""
-    info "Action fn selected = \"${FN_ACTION}\""
-
     [ -z "${ACTION}" ] && error "Action selection failed!"
-
     ## Crida la fn_action_ corresponent
     debug "Calling function \"${FN_ACTION}\""
     eval ${FN_ACTION}
