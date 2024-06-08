@@ -58,14 +58,9 @@ fn_update_main_src_file_version_var() {
 }
 
 fn_set_last_tag() {
-    ## First get how mani tags are found to construct the changelog by blocks
-    arr_git_tags=( $(git tag) )
-    info "arr_git_tags:"
-    printf '%s\n' ${arr_git_tags[@]}
-    exit
-
     ## Check if the has commit has a tag
     last_commit_tag="$(git tag --contains "HEAD")"
+    prev_last_commit_tag="$(git tag --sort=-creatordate | sed -n '2p')"
     if [ -z "${last_commit_tag}" ]; then
         clear && info "The last commit has not assigned a tag and is required"
         last_tag=$(git log --decorate | grep 'tag:' \
