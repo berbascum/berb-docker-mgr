@@ -110,11 +110,11 @@ fn_pkg_source_type_detection() {
     if [ -e "${START_DIR}/pkg_rootfs" ]; then
 	## Set docker mode
 	docker_mode="package"
-	pkg_type="standard_pkg"
+	pkg_type="debian_package"
         APT_INSTALL_EXTRA=""
 	info "Package type detected: \"${pkg_type}\""
 	## Source the corresponding pkg_type lib
-	. /usr/lib/${TOOL_NAME}/bdm_plugin_build_deb_pkg.sh --run
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
 	## Set docker mode
@@ -125,7 +125,7 @@ fn_pkg_source_type_detection() {
             APT_INSTALL_EXTRA="releng-tools"
 	    info "Package type detected: \"${pkg_type}\""
 	    ## Import the build droidian package lib
-	    . /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_adaptation.sh --run
+	    # . /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_adaptation.sh --run
             ## Configure the droidian package source
             #fn_docker_config_droidian_package_source
 	fi
@@ -194,3 +194,13 @@ fn_create_outputs_backup() {
 }
 
 fn_pkg_source_type_detection
+fn_docker_plugin_container_conf
+fn_bdm_docker_container_config
+fn_bdm_docker_global_config
+arr_actions_plugin=( "exit" "plugin build ${pkg_type}" )
+declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
+
+while [ "${exit}" != "True" ]; do
+    fn_bdm_docker_menu_fzf
+done
+

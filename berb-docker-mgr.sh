@@ -37,6 +37,7 @@
 #################
 ## Header vars ##
 #################
+
 export TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
 #TOOL_VERSION="2.0.0.1"
 #TOOL_CHANNEL="develop"
@@ -133,7 +134,9 @@ fn_bdm_docker_global_config() {
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
 DEFINED_IN_PLUGINS
+}
 
+fn_bdm_docker_container_config() {
     ## If no docker images found, set the default config
     docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
     #if [ "${docker_how_many_imgs}" -eq "0" ]; then
@@ -183,14 +186,19 @@ fn_bdm_docker_menu_fzf() {
     ## If action = exit set exit=True and leave from function
     [ "${ACTION}" == "exit" ] && exit="True" && return
     ## If it's a plugin action set exit="True" and leave from function
-    action_is_plugin$(echo "${ACTION}" | grep "plugin")
-    [ -n "${action_is_plugin}" ] && return
-    ## Call the docker action
-    FN_ACTION="fn_${ACTION}"
-    [ -z "${ACTION}" ] && error "Action selection failed!"
-    ## Crida la fn_action_ corresponent
-    debug "Calling function \"${FN_ACTION}\""
-    eval ${FN_ACTION}
+    action_is_plugin=$(echo "${ACTION}" | grep "plugin")
+    if [ -n "${action_is_plugin}" ]; then
+	exit="True"
+	debug "Executing plugin exec function"
+	fn_plugin_sub_exec
+    else
+        ## Call the docker action
+        FN_ACTION="fn_${ACTION}"
+        [ -z "${ACTION}" ] && error "Action selection failed!"
+        ## Crida la fn_action_ corresponent
+        debug "Calling function \"${FN_ACTION}\""
+        eval ${FN_ACTION}
+    fi
 }
 
 fn_docker_multiarch_enable() {
