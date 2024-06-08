@@ -3,7 +3,7 @@
 # Upstream-Name: berb-docker-mgr
 # Source: https://github.com/berbascum/berb-docker-mgr
 #
-## Script to build a debian package from current dir
+## build Sub-Plugin to build a debian package from the files in the current dir
 #
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
