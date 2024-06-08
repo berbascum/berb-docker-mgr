@@ -61,7 +61,7 @@ fn_set_last_tag() {
     ## First get how mani tags are found to construct the changelog by blocks
     arr_git_tags=( $(git tag) )
     info "arr_git_tags:"
-    primtf '%s\n' ${arr_git_tags[@]}
+    printf '%s\n' ${arr_git_tags[@]}
     exit
 
     ## Check if the has commit has a tag
