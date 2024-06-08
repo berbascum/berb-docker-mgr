@@ -63,13 +63,18 @@ fn_set_last_tag() {
     prev_last_commit_tag="$(git tag --sort=-creatordate | sed -n '2p')"
     if [ -z "${last_commit_tag}" ]; then
         clear && info "The last commit has not assigned a tag and is required"
-        last_tag=$(git log --decorate | grep 'tag:' \
-	    | head -n 1 | awk '{print $NF}' | tr -d ')')
+        last_tag=$(git describe --tags --abbrev=0)
         if [ -n "${last_tag}" ]; then
 	    last_commit_tagged=$(git log --decorate  --abbrev-commit \
-	       | grep 'tag:' | head -n 1 | awk '{print $2}') \
-            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}") \
+	       | grep 'tag:' | head -n 1 | awk '{print $2}')
+            info "Last commit taged \"${last_commit_tagged}\""
+            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}")
             info "Last tag \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
+            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
+            [ -z "${answer}" ] && abort "Canceled by user!"
+            input_tag_is_valid=$(echo "${answer}" | grep "\/")
+            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
+            last_commit_tag="${answer}"
 	else
             info "No git tags found!"
             ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
@@ -79,6 +84,7 @@ fn_set_last_tag() {
             last_commit_tag="${answer}"
 	fi
     fi
+    info "Last commit tag defined: ${last_commit_tag}"
 }
 
 fn_get_package_info() {
