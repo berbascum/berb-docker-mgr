@@ -33,19 +33,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+[ -z "$(echo "$@" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
 
-
-fn_docker_menu_actions_basic() {
-    ## Function to get a action
-#    fn_bbgl_ifs_2_newline activa
+fn_docker_plugin_conf() {
     docker_mode="default"
     ## Docker constants
-    CONTAINER_BASE_NAME=""
-    IMAGE_BASE_NAME="ghcr.io/berbascum/${CONTAINER_BASE_NAME}"
+    CONTAINER_BASE_NAME="berb-build-env"
+    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
+    fn_bdm_docker_global_config
+}
+
+fn_docker_plugin_menu_actions() {
+    ## Function to get a action
     arr_actions_base=( \
 	"create container" \
 	"remove container" \
@@ -55,72 +58,10 @@ fn_docker_menu_actions_basic() {
 	"command to container" \
 	"commit container" \
     )
-
-
-    arr_data=( "${arr_actions_base[@]}" )
-    fn_bssf_menu_fzf "action" "single"
-    ACTION=$(echo "${item_selected}" | sed 's/ /_/g')
-    debug "ACTION = ${ACTION}"
-
-    FN_ACTION="fn_${ACTION}"
-    info "Action selected = \"${ACTION}\""
-    info "Plugin fn selected = \"${FN_ACTION}\""
-
-    [[ -z "${ACTION}" ]] error "Action selection failed!"
-
-    ## Crida la fn_action_ corresponent
-    debug "Calling function \"${FN_ACTION}\""
-    eval ${FN_ACTION}
-
-
- #   fn_bbgl_ifs_2_newline desactiva
+    declare -g arr_data=( "${arr_actions_base[@]}" )
 }
 
+fn_docker_plugin_conf
+fn_docker_plugin_menu_actions
+fn_bdm_docker_menu_fzf
 
-<< "DISABLED_DEPRECATED"
-## Execute action on container name
-if [ "$ACTION" == "create" ]; then
-    fn_create_container
-elif [ "$ACTION" == "remove" ]; then
-    fn_remove_container
-elif [ "$ACTION" == "start" ]; then
-    fn_start_container
-elif [ "$ACTION" == "stop" ]; then
-    fn_stop_container
-elif [ "$ACTION" == "shell-to" ]; then
-    fn_shell_to_container
-elif [ "$ACTION" == "command-to" ]; then
-   fn_cmd_on_container
-    fn_install_apt_extra
-elif [ "$ACTION" == "commit-container" ]; then
-    fn_commit_container
-
-
-
-
-    case ${answer} in
-	1)
-	    ACTION="create"
-	    ;;
-	2)
-	    ACTION="remove"
-	    ;;
-	3)
-	    ACTION="start"
-	    ;;
-	4)
-	    ACTION="stop"
-	    ;;
-	5)
-	    ACTION="commit-container"
-	    ;;
-	#6)
-	 #   ACTION="install-apt-extra"
-	 #   ;;
-	7)
-	    ACTION="shell-to"
-	    ;;
-	8)
-	    ACTION="command-to"
-	    ;;
-DISABLED_DEPRECATED

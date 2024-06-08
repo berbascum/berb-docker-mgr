@@ -83,7 +83,7 @@ fn_bdm_user_conf_file_install() {
     ## If the main conf user file  not exist copy from template
     [ ! -d "${USER_CONF_FULLPATH}" ] && mkdir "${USER_CONF_FULLPATH}" \
 	&& debug "Creating dir: ${USER_CONF_FULLPATH}"
-    if [ ! -f "${USER_CONF_MAIN_FULLPATH_FILENAME}" ]; then
+	if [ ! -f "${USER_CONF_MAIN_FULLPATH_FILENAME}" ]; then
 	cp "${TEMPLATES_FULLPATH}/${USER_CONF_MAIN_FILENAME}" "${USER_CONF_FULLPATH}"
 	debug "Copying user main conf file to: ${USER_CONF_FULLPATH}"
     fi
@@ -103,8 +103,8 @@ fn_bdm_load_plugin() {
     if [ -n "${plugin_enabled}" ]; then
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin}.sh
     else
-	. ${LIBS_FULLPATH}/bdm_plugin_default.sh
-        fn_docker_menu_actions_basic
+	. ${LIBS_FULLPATH}/bdm_plugin_default.sh --run
+        #fn_docker_menu_actions_basic
     fi
 }
 
@@ -112,7 +112,8 @@ fn_bdm_load_plugin() {
 ######################
 ## Docker functions ##
 ######################
-fn_docker_global_config() {
+fn_bdm_docker_global_config() {
+<< "DEFINED_IN_PLUGINS"
     ## Docker constants
     CONTAINER_BASE_NAME="droidian-build-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
@@ -120,16 +121,21 @@ fn_docker_global_config() {
     CONTAINER_COMMITED_NAME="droidian-berb-build-env-${package_name}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
+DEFINED_IN_PLUGINS
 
     ## If no docker images found, set the default config
     docker_how_many_imgs=$(docker images | grep -c -v "TAG")""
-    if [ "${docker_how_many_imgs}" -eq "0" ]; then
+    #if [ "${docker_how_many_imgs}" -eq "0" ]; then
 	IMAGE_NAME="${IMAGE_BASE_NAME}"
+	info "CONTAINER_BASE_NAME = $CONTAINER_BASE_NAME"
         CONTAINER_NAME="$CONTAINER_BASE_NAME"
 	IMAGE_TAG="${IMAGE_BASE_TAG}"
-	return 0
-    fi
+	#return 0
+    #fi
+    ## Search for container name
+    container_exist=$(docker ps -a | grep "${CONTAINER_BASE_NAME}")
 
+<< "DISABLED_NEEDS_REWRITE"
     ## If a docker image with "latest" on the tag name is found, set the commited config
     img_latest_tag="$(docker images | grep -v "TAG" | grep "${IMAGE_COMMIT_NAME}" \
 	    | grep "latest" | awk '{print $1}')"
@@ -151,7 +157,24 @@ fn_docker_global_config() {
 	return 0
     fi
 
-    ERROR "An error occourred setting the CONTAINER_NAME var!"
+    error "An error occourred setting the CONTAINER_NAME var!"
+DISABLED_NEEDS_REWRITE
+}
+
+fn_bdm_docker_menu_fzf() {
+    fn_bssf_menu_fzf "action" "single"
+    ACTION=$(echo "${item_selected}" | sed 's/ /_/g')
+    debug "ACTION = ${ACTION}"
+
+    FN_ACTION="fn_${ACTION}"
+    info "Action selected = \"${ACTION}\""
+    info "Action fn selected = \"${FN_ACTION}\""
+
+    [ -z "${ACTION}" ] && error "Action selection failed!"
+
+    ## Crida la fn_action_ corresponent
+    debug "Calling function \"${FN_ACTION}\""
+    eval ${FN_ACTION}
 }
 
 fn_docker_multiarch_enable() {
@@ -160,17 +183,16 @@ fn_docker_multiarch_enable() {
 }
 
 fn_create_container() {
-fn_create_container() {
 # Creates the container
-    DEBUG "CONTAINER_NAME = $CONTAINER_NAME"
+    info "CONTAINER_NAME = $CONTAINER_NAME"
     pause "Pausa..."
 
-    CONTAINER_EXISTS=$(docker ps -a | grep -c ${CONTAINER_NAME})
+    CONTAINER_EXISTS=$(docker ps -a | grep ${CONTAINER_NAME})
     img_commited_exist=$(docker images | grep ${IMAGE_COMMIT_NAME})
     [ -n "${img_commited_exist}" ] && IMAGE_NAME="${IMAGE_COMMIT_NAME}" \
 	&& IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 
-    if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
+    if [ -z "${CONTAINER_EXISTS}" ]; then
         INFO "Creating docker container \"${CONTAINER_NAME}\""
 	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" imgage..." 
 	if [ "${docker_mode}" == "default" ]; then
@@ -428,7 +450,7 @@ fn_bdm_load_plugin
 exit
 
 fn_pkg_source_type_detection
-fn_docker_global_config
+# Ho criden els plugins fn_bdm_docker_global_config
 fn_action_prompt
 #fn_set_container_commit_if_exists
 
