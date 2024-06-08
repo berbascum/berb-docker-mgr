@@ -1,11 +1,11 @@
 #!/bin/bash
 
-## Script to manage docker containers
+## Plugin to build packages on docker linux containers with package autodetection. 
 #
 # Upstream-Name: berb-docker-mgr
 # Source: https://github.com/berbascum/berb-docker-mgr
 #
-# Copyright (C) 2022 Berbascum <berbascum@ticv.cat>
+# Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
 #
 # BSD 3-Clause License
@@ -33,61 +33,112 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-fn_dir_is_git() {
-    ## Abort if no .git directory found
-    [ ! -d ".git" ] && ABORT "The current dir should be a git repo!"
+[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
+
+## Include libs
+. /usr/lib/berb-bash-libs/bbl_git_lib.sh
+
+fn_update_main_src_file_version_var() {
+    ## Update the TOOL_VERSION value on the main source file with the last tag version
+    tag_version=$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')
+#OBTENIR num versio var TOOL_VERSION
+    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
+	tool_vers_var_name="TOOL_VERSION"
+    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
+        tool_vers_var_name="#TOOL_VERSION"
+    else
+        tool_vers_var_name=""
+    fi
+    if [ -n "${tool_vers_var_name}" ]; then
+	    tool_vers_var_version=$(cat )
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
+    fi
+        info "Creating tag \"${last_commit_tag}\" on the last commit..."
+	git tag "${last_commit_tag}"
 }
 
-fn_debian_control_found() {
-    ## Abort if no debian/control file found
-    [ ! -f "debian/control" ] && ABORT "debian control file not found!"
+fn_set_last_tag() {
+    ## Check if the has commit has a tag
+    last_commit_tag="$(git tag --contains "HEAD")"
+    if [ -z "${last_commit_tag}" ]; then
+        clear && info "The last commit has not assigned a tag and is required"
+        last_tag=$(git log --decorate | grep 'tag:' \
+	    | head -n 1 | awk '{print $NF}' | tr -d ')')
+        if [ -n "${last_tag}" ]; then
+	    last_commit_tagged=$(git log --decorate  --abbrev-commit \
+	       | grep 'tag:' | head -n 1 | awk '{print $2}') \
+            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}") \
+            info "Last tag \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
+	else
+            info "No git tags found!"
+            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
+            [ -z "${answer}" ] && abort "Canceled by user!"
+            input_tag_is_valid=$(echo "${answer}" | grep "\/")
+            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
+            last_commit_tag="${answer}"
+	fi
+    fi
+    fn_update_main_src_file_version_var
+}
+
+fn_get_package_info() {
+    ## Get the package version and channel distribution from the last commit tag (mandatory)
+    package_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
+    package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
+    [ -z "${package_dist_channel}" ] && package_dist_channel="${package_dist_channel_tag}"
+    [ -z "${package_version}" ] && package_version="${package_version_tag}"
+    info "package_dist_channel = ${package_dist_channel}"
+    info "package_version = ${package_version}"
 }
 
 fn_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)
     ## check for git dir
-    fn_dir_is_git # Abort if not
+    fn_bblgit_dir_is_git # Abort if not
     ## Check for debian control
-    fn_debian_control_found # Abort if not
+    fn_bblgit_debian_control_found # Abort if not
     ## Get the package name from debian control
     package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 
-    # Cerca un arxiu README de linux kernel
-    if [ -e "$START_DIR/README" ]; then
-	## Check if is kernel
-        IS_KERNEL=$(cat $START_DIR/README | head -n 1 | grep -c "Linux kernel")
-        [ "${IS_KERNEL}" -eq '0' ] \
-	    && ABORT "No Linux kernel README file found in current dir."
-        APT_INSTALL_EXTRA="releng-tools"
-	INFO "Kernel source dir detected!"
-	docker_mode="kernel"
-	## Load berb-build-droidian-kernel.sh
-	source  /usr/lib/${TOOL_NAME}/berb-build-droidian-kernel.sh
-	## Call kernel source config function
-	fn_docker_config_kernel_source
+    # Cerca el dir pkg_rootfs
+    if [ -e "${START_DIR}/pkg_rootfs" ]; then
+	## Set docker mode
+	docker_mode="package"
+	pkg_type="standard_pkg"
+        APT_INSTALL_EXTRA=""
+	info "Package type detected: \"${pkg_type}\""
+	## Source the corresponding pkg_type lib
+	. /usr/lib/${TOOL_NAME}/bdm_plugin_build_deb_pkg.sh --run
+    # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
 	## Set docker mode
 	docker_mode="package"
 	## Get the package type
-	pkg_type=""
-	if [ -z "${pkg_type}" ]; then
-	   if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
-	       pkg_type="droidian_adapt"
-               APT_INSTALL_EXTRA="releng-tools"
-	       INFO "Package type detected: \"${pkg_type}\""
-           else
-	       pkg_type="standard_pkg"
-               APT_INSTALL_EXTRA="releng-tools"
-	       INFO "Package type detected: \"${pkg_type}\""
-	       ## Source the corresponding pkg_type lib
-	       source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
-	   fi
-	   ## Source the build droidian package lib
-	   source /usr/lib/${TOOL_NAME}/berb-build-droidian-package.sh
-           ## Configure the droidian package source
-           fn_docker_config_droidian_package_source
-        fi
+	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
+	    pkg_type="droidian_adapt"
+            APT_INSTALL_EXTRA="releng-tools"
+	    info "Package type detected: \"${pkg_type}\""
+	    ## Import the build droidian package lib
+	    . /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_adaptation.sh --run
+            ## Configure the droidian package source
+            #fn_docker_config_droidian_package_source
+	fi
+    # Cerca un arxiu README de linux kernel
+    elif [ -e "$START_DIR/Makefile" ]; then
+	    ## Check if is kernel
+            IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
+            [ -z "${IS_KERNEL}" ] \
+	        && abort "No Linux kernel source found in current dir."
+            APT_INSTALL_EXTRA="releng-tools"
+	    INFO "Kernel source dir detected!"
+	    docker_mode="kernel"
+	    ## Load berb-build-droidian-kernel.sh
+	    info "Cal implementar alguna cosa que sapiga que és kernel droidian"
+	    pause "tipus ask What type of kernel source you want to build?"
+	    source  /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_kernel.sh
+	    ## Call kernel source config function
+	    fn_docker_config_kernel_source
     else
         abort "Not supported package dir found!"
     fi
@@ -136,3 +187,5 @@ fn_create_outputs_backup() {
     fi
     cd $START_DIR
 }
+
+fn_pkg_source_type_detection

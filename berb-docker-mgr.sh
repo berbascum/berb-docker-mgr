@@ -66,7 +66,6 @@ fn_bdm_global_conf() {
     ## Load global vars section from main config file
     section="global-vars"
     fn_bbgl_parse_file_section CONF_MAIN "${section}" "load_section"
-    # printf '%s\n' ${arr_plugins_implemented[@]}
     ## Check for --plugin flag
     fn_bbgl_check_args_search_flag "plugin" $@
     debug "FLAG_FOUND_VALUE = ${FLAG_FOUND_VALUE}"
@@ -101,7 +100,9 @@ fn_bdm_user_conf_file_load() {
 
 fn_bdm_load_plugin() {
     if [ -n "${plugin_enabled}" ]; then
-	. ${LIBS_FULLPATH}/bdm_plugin_${plugin}.sh
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_main.sh --run
+
+        # printf '%s\n' ${arr_plugins_implemented[@]}
     else
 	. ${LIBS_FULLPATH}/bdm_plugin_default.sh --run
         #fn_docker_menu_actions_basic
