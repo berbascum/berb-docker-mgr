@@ -66,8 +66,7 @@ fn_bdm_global_conf() {
     ## Load global vars section from main config file
     section="global-vars"
     fn_bbgl_parse_file_section CONF_MAIN "${section}" "load_section"
-    printf '%s\n' ${arr_plugins_implemented[@]}
-    exit
+    # printf '%s\n' ${arr_plugins_implemented[@]}
     ## Check for --plugin flag
     fn_bbgl_check_args_search_flag "plugin" $@
     debug "FLAG_FOUND_VALUE = ${FLAG_FOUND_VALUE}"
@@ -99,6 +98,16 @@ fn_bdm_user_conf_file_load() {
     section="global-vars"
     fn_bbgl_parse_file_section USER_CONF_MAIN "${section}" "load_section"
 }
+
+fn_bdm_load_plugin() {
+    if [ -n "${plugin_enabled}" ]; then
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin}.sh
+    else
+	. ${LIBS_FULLPATH}/bdm_plugin_default.sh
+        fn_docker_menu_actions_basic
+    fi
+}
+
 
 ######################
 ## Docker functions ##
@@ -151,6 +160,7 @@ fn_docker_multiarch_enable() {
 }
 
 fn_create_container() {
+fn_create_container() {
 # Creates the container
     DEBUG "CONTAINER_NAME = $CONTAINER_NAME"
     pause "Pausa..."
@@ -163,7 +173,10 @@ fn_create_container() {
     if [ "${CONTAINER_EXISTS}" -eq "0" ]; then
         INFO "Creating docker container \"${CONTAINER_NAME}\""
 	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" imgage..." 
-	if [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
+	if [ "${docker_mode}" == "default" ]; then
+	    docker -v create --name ${CONTAINER_NAME} \
+	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+	elif [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 	        -v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
@@ -367,32 +380,8 @@ fn_action_prompt() {
     info " 13 - Config adaptation          14 - Build adaptation on container"
     #INFO " 6 - Install required apt pkgs on container"
     #INFO  "20 - Backup kernel build output relevant files"
-    ASK "Select an option: "
-    case ${answer} in
-	1)
-	    ACTION="create"
-	    ;;
-	2)
-	    ACTION="remove"
-	    ;;
-	3)
-	    ACTION="start"
-	    ;;
-	4)
-	    ACTION="stop"
-	    ;;
-	5)
-	    ACTION="commit-container"
-	    ;;
-	#6)
-	 #   ACTION="install-apt-extra"
-	 #   ;;
-	7)
-	    ACTION="shell-to"
-	    ;;
-	8)
-	    ACTION="command-to"
-	    ;;
+
+<< "DISABLED_DEPRECATED"
 	9)
 	    ACTION="config-droidian-kernel"
 	    ;;
@@ -418,6 +407,7 @@ fn_action_prompt() {
 	    echo "" && echo "Option not implemented!" && exit 1
 	    ;;
 	esac
+DISABLED_DEPRECATED
 }
 
 ############################
@@ -432,7 +422,11 @@ fn_bbgl_check_bash_ver
 fn_bdm_user_conf_file_install
 fn_bdm_user_conf_file_ask_empty_vars
 fn_bdm_user_conf_file_load
+fn_bdm_load_plugin
+
+
 exit
+
 fn_pkg_source_type_detection
 fn_docker_global_config
 fn_action_prompt
