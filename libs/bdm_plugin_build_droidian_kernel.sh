@@ -38,6 +38,11 @@
 ############################
 ## Kernel build functions ##
 ############################
+
+
+    chmod +x /buildd/sources/debian/rules
+    cd /buildd/sources
+
 fn_docker_config_kernel_source() {
     APT_INSTALL_EXTRA=" \
         bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
