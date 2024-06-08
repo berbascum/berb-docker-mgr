@@ -1,9 +1,9 @@
 #!/bin/bash
 
+## Plugin to do basic docker containers management
+#
 # Upstream-Name: berb-docker-mgr
 # Source: https://github.com/berbascum/berb-docker-mgr
-#
-## Plugin to do basic docker containers management
 #
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
