@@ -1,0 +1,31 @@
+# Base image
+FROM debian:trixie-slim
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update the package list and install required packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    dpkg-dev \
+    build-essential \
+    crossbuild-essential-arm64 \
+    crossbuild-essential-i386 \
+    qemu-user-static \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable additional architectures
+RUN dpkg --add-architecture i386 && \
+    dpkg --add-architecture arm64 && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc-arm-linux-gnueabihf \
+    gcc-arm-linux-gnueabi \
+    libc6-dev-arm64-cross \
+    libc6-dev-i386 \
+    lib32gcc-10-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set default command
+CMD ["/bin/bash"]
+
