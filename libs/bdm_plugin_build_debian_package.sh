@@ -36,13 +36,8 @@
 
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
-#fn_config_global() {
-#    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-#}
-
-fn_docker_plugin_conf() {
+fn_docker_plugin_container_conf() {
     # docker_mode="package" ##Es defineix al build_main  
-
     ## Docker constants
     CONTAINER_BASE_NAME="berb-build-env"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
@@ -50,34 +45,28 @@ fn_docker_plugin_conf() {
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
-    fn_bdm_docker_global_config
-    arr_actions_plugin=( "exit" "plugin build debian package" )
-    declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 }
 
 fn_build_package() {
      info "TODO:"
 }
 
-fn_docker_plugin_conf
-while [ "${exit}" != "True" ]; do
-    fn_bdm_docker_menu_fzf
-done
+#fn_plugin_build_debia_package() {
+fn_plugin_sub_exec()  {
+    ## Load global conf
+    #fn_config_global
+    ## Check the git workdir status and abort if not clean
+    fn_bblgit_workdir_status_check
+    ## Check if the last commit has a tag
+    fn_set_last_tag
 
+    exit
+    fn_update_main_src_file_version_var
+    ## Get package info
+    fn_get_package_info
 
+    fn_changelog_full_gen
+    ## Call releng-build-package
+    fn_build_package
+}
 
-## Load global conf
-#fn_config_global
-## Check the git workdir status and abort if not clean
-fn_bblgit_workdir_status_check
-## Check if the last commit has a tag
-fn_set_last_tag
-
-exit
-fn_update_main_src_file_version_var
-## Get package info
-fn_get_package_info
-
-fn_changelog_full_gen
-## Call releng-build-package
-fn_build_package
