@@ -45,9 +45,12 @@ fn_docker_plugin_conf() {
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     fn_bdm_docker_global_config
-    declare -g arr_data=( "${arr_actions_base[@]}" )
+    arr_actions_plugin=( "exit" )
+    declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 }
 
 fn_docker_plugin_conf
-fn_bdm_docker_menu_fzf
+while [ "${exit}" != "True" ]; do
+    fn_bdm_docker_menu_fzf
+done
 

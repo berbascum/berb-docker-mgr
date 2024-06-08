@@ -69,6 +69,7 @@ fn_bdm_global_conf() {
     ## Check for --plugin flag
     fn_bbgl_check_args_search_flag "plugin" $@
     debug "FLAG_FOUND_VALUE = ${FLAG_FOUND_VALUE}"
+
     if [ -n "${FLAG_FOUND_VALUE}" ]; then
         plugin_enabled="${FLAG_FOUND_VALUE}"
 	debug "plugin_enabled = ${plugin_enabled}"
@@ -171,9 +172,13 @@ DEFINED_IN_PLUGINS
 DISABLED_NEEDS_REWRITE
 }
 
+fn_exit() {
+    exit
+}
 fn_bdm_docker_menu_fzf() {
     fn_bssf_menu_fzf "action" "single"
     ACTION=$(echo "${item_selected}" | sed 's/ /_/g')
+    [ "${ACTION}" == "exit" ] && exit="True"
     debug "ACTION = ${ACTION}"
 
     FN_ACTION="fn_${ACTION}"
@@ -241,7 +246,7 @@ fn_create_container() {
 
 	info "Container created!"
     else
-	info "Container already exists!" && exit 4
+	info "Container already exists!" #&& exit 4
     fi
 }
 

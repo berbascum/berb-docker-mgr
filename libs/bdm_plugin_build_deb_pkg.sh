@@ -36,12 +36,13 @@
 
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
-fn_config_global() {
-    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-}
+#fn_config_global() {
+#    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
+#}
 
 fn_docker_plugin_conf() {
-    docker_mode="default"
+    # docker_mode="package" ##Es defineix al build_main  
+
     ## Docker constants
     CONTAINER_BASE_NAME="berb-build-env"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
@@ -50,18 +51,24 @@ fn_docker_plugin_conf() {
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     fn_bdm_docker_global_config
-    declare -g arr_data=( "${arr_actions_base[@]}" )
+    arr_actions_plugin=( "exit" "build debian package" )
+    declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 }
 
 fn_build_package() {
      info "TODO:"
 }
 
-exit
 fn_docker_plugin_conf
-fn_bdm_docker_menu_fzf
+while [ "${exit}" != "True" ]; do
+    fn_bdm_docker_menu_fzf
+done
+
+
+
+exit
 ## Load global conf
-fn_config_global
+#fn_config_global
 ## Check the git workdir status and abort if not clean
 fn_bblgit_workdir_status_check
 ## Check if the last commit has a tag
