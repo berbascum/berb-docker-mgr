@@ -220,7 +220,7 @@ fn_create_container() {
 		-v ${buildd_sources_fullpath}:/buildd/sources \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
 	else
-	    ABORT "Docker mode not implemented"
+	    abort "Docker mode not implemented"
 	fi
 	## Ask to start container
 	ASK "Want to start the container? [ y|n ]: "
@@ -238,9 +238,9 @@ fn_create_container() {
 	    && ASK "Want to install the extra apt packages? [ y|n ]: "
 	[ "${answer}" == "y" ] && fn_install_apt_extra
 
-	INFO "Container created!"
+	info "Container created!"
     else
-	INFO "Container already exists!" && exit 4
+	info "Container already exists!" && exit 4
     fi
 }
 
@@ -249,17 +249,17 @@ fn_remove_container() {
     CONTAINER_EXIST=$(docker ps -a | grep -c "$CONTAINER_NAME")
     CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
     if [ "$CONTAINER_EXIST" -eq '0' ]; then
-	INFO "Container $CONTAINER_NAME not exists..."
+	info "Container $CONTAINER_NAME not exists..."
 	echo
     else
 	ASK "SURE to REMOVE container $CONTAINER_NAME [ yes | any-word ] ? "
     fi
     if [ "${answer}" == "yes" ]; then
- 	INFO "Removing container..."
+ 	info "Removing container..."
 	fn_stop_container
 	docker rm $CONTAINER_ID
     else
-	INFO "Container $CONTAINER_NAME will NOT be removed as user choice"
+	info "Container $CONTAINER_NAME will NOT be removed as user choice"
 	echo
     fi
 }
