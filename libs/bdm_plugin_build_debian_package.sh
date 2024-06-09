@@ -60,11 +60,16 @@ fn_build_package() {
 }
 
 fn_build_package_on_container() {
+    ## Create a build launcher and copy to the sources dir
     echo "#!/bin/bash" > ${SOURCES_FULLPATH}/build-debian-package.sh
     echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
     echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    ## Set x permissions
     chmod +x ${SOURCES_FULLPATH}/build-debian-package.sh
-    docker exec -it $CONTAINER_NAME bash ${SOURCES_FULLPATH}/build-debian-package.sh
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/build-debian-package.sh
+    rm ${SOURCES_FULLPATH}/build-debian-package.sh
     INFO "Build package finished."
 }
 
