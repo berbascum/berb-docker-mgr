@@ -1,0 +1,47 @@
+berb-docker-mgr (2.1.1.1+git20240609035836..) develop; urgency=medium
+
+  [berbascum]
+  * (7487dfa) Rename: get_last_tag function since will be moved to berb-bash-libs_bblgit 
+  * (a8cd3f5) Update: some adaptations to use the new bblgit changelog bash generator 
+  * (b7f0611) Update: getting tag and package info is working on build_debian_package plugin 
+  * (f4e0a53) Upgrade: some improvements on the get_last_git_tag feature 
+  * (2109b49) Upgrade: improved plugin selection 
+  * (7bedf6a) Rename: build debian package plugin file due to development requirements 
+  * (b9b7f58) Rename: build droidian adaptation plugin file due to development requirements 
+  * (105708d) Fix: typo on bdm_plugin_build_main.sh 
+  * (cadea4b) Upgrade: some work on build debian pkg was performed 
+  * (8361d47) Remove debian/changelog 
+  * (b3adbf6) New: Infinite menu feature 
+              Fixes: some error fixes while testing
+  * (36bdf2e) Update: debhelper install dir 
+  * (e4ecdad) Rename: droidian kernel and adapt. plugin files to the bdm standard 
+  * (f32ef62) Update: main build plugin is detecting standard_pkg packages using pkg_rootfs dir 
+  * (209a7a7) Update: header info on bdm_plugin_default.sh 
+  * (b2372a5) Update: plugins list on bdm-main-conf 
+  * (3a08b13) Update: message type on some stdout prints 
+  * (00f497f) Fix: ask message in remove container function 
+              Update: plugin default, the basic actions array was moved to the main script
+  * (753e052) Rename: some plugin lib scripts to standarize them 
+  * (75179ff) Add: doc about docker image creation 
+  * (97c2e78) Add var to the user main config file template 
+  * (001da9d) Upgrade: default docker plugin is creating containers from a github docker image 
+  * (acce35f) New: action selection using fzf and the default plugin lib were implemented 
+  * (179b590) New: a main config file in etc dir was implemented 
+  * (a05fa5f) New: plugin selection flag as script argument has been implemented 
+  * (fa27c42) Update: add some comments in the main script 
+  * (65a9d71) New: User will be asked for empty vars in the main user config file global-vars section 
+  * (fbe9053) Update: some changes on the config files implementation to integrate with the bbgl parse config file feature 
+  * (a13c4a9) New: started user config file implementation 
+  * (0eb367f) Update: main script, splitted librarys new names 
+  * (2c8655b) New: Log file, log level and the flag --log-level has been implemented 
+  * (22aa3ca) Remove: bdm_general_lib since will have its own packaging 
+  * (fb1d933) New: feature log and log level initial implementation working 
+  * (e404417) Split: build packages and general functions from the main script to some new lib scripts 
+  * (8a54268) Save: some Droidian plugin scripts on paused development 
+  * (6f1b56f) Change: debian package fornat from native to git 
+  * (f0ef0df) Split: Phase 2 begins, rename the tool to more generic for scalability reasons 
+  * (552d566) Fix: typo in the main script 
+  * (3f8d052) Update: Some improvements on the plugins split process 
+  * (c7245b9) Improve: droidian_adapt pkg_type detection 
+
+ -- berbascum <berbascum@ticv.cat> dg., 09 de juny 2024 03:58:36 +0200
