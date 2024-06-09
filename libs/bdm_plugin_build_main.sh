@@ -60,7 +60,11 @@ fn_update_main_src_file_version_var() {
 fn_set_last_tag() {
     ## Check if the has commit has a tag
     last_commit_tag="$(git tag --contains "HEAD")"
+    last_commit_id=$(git log --decorate  --abbrev-commit | head -n 1 | awk '{print $2}')
     prev_last_commit_tag="$(git tag --sort=-creatordate | sed -n '2p')"
+    prev_last_commit_id=$(git log --decorate  --abbrev-commit \
+        | grep "${prev_last_commit_tag}" | head -n 1 | awk '{print $2}')
+	
     if [ -z "${last_commit_tag}" ]; then
         clear && info "The last commit has not assigned a tag and is required"
         last_tag=$(git describe --tags --abbrev=0)
@@ -89,11 +93,11 @@ fn_set_last_tag() {
 
 fn_get_package_info() {
     ## Get the package version and channel distribution from the last commit tag (mandatory)
-    package_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
+    pkg_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
     package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
-    [ -z "${package_dist_channel}" ] && package_dist_channel="${package_dist_channel_tag}"
+    [ -z "${pkg_dist_channel}" ] && pkg_dist_channel="${pkg_dist_channel_tag}"
     [ -z "${package_version}" ] && package_version="${package_version_tag}"
-    info "package_dist_channel = ${package_dist_channel}"
+    info "pkg_dist_channel = ${pkg_dist_channel}"
     info "package_version = ${package_version}"
 }
 

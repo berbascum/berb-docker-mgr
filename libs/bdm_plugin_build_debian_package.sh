@@ -62,9 +62,8 @@ fn_plugin_sub_exec()  {
     # fn_update_main_src_file_version_var
     ## Get package info
     fn_get_package_info
-    exit
-
-    fn_changelog_full_gen
+    ## Build the change log from the git history
+    fn_bblgit_changelog_build
     ## Call releng-build-package
     fn_build_package
 }
