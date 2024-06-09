@@ -65,17 +65,18 @@ fn_update_main_src_file_version_var() {
 
 fn_copy_files_to_pkg_dir() {
     ## Create dirs on pkg rootfs dir
+    info "Copying the package files to the pkg rootfs dir..."
     debian_package_dirs_file_relpath="debian/${package_name}.dirs"
     [ ! -f "${debian_package_dirs_file_relpath}" ] \
 	&& error "debian package dirs file not found!"
-    for dir in $(cat ${debian_package_dirs_file_relpath}); do
-        [ ! -d "${pkg_dir}${dir}" ] && mkdir -p -v ${pkg_dir}${dir}
-    done
+    while read dir; do
+        [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
+    done <${debian_package_dirs_file_relpath}
     ## Copy the package files to the pkg rootfs dir
-    cp -v ${package_name}.sh ${pkg_dir}/usr/bin/${package_name}
-    cp -v libs/*  ${pkg_dir}/usr/lib/${package_name}/
-    cp -v conf/*  ${pkg_dir}/etc/${package_name}/
-    cp -v conf_templates/*  ${pkg_dir}/usr/share/${package_name}/
+    cp ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+    cp libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}/
+    cp conf/*  ${pkg_rootfs_dir}/etc/${package_name}/
+    cp conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}/
 }
 
 fn_pkg_source_type_detection() {
@@ -93,12 +94,14 @@ fn_pkg_source_type_detection() {
 	## Set docker mode
 	docker_mode="package"
 	pkg_type="debian_package"
+	pkg_rootfs_dir="pkg_rootfs"
         APT_INSTALL_EXTRA=""
 	info "Package type detected: \"${pkg_type}\""
 	## Source the corresponding pkg_type lib
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
+	pkg_rootfs_dir="sparse"
 	## Set docker mode
 	docker_mode="package"
 	## Get the package type
