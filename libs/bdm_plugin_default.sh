@@ -35,21 +35,23 @@
 
 [ -z "$(echo "$@" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
 
-fn_docker_plugin_conf() {
+fn_docker_plugin_container_conf() {
     docker_mode="default"
     ## Docker constants
-    CONTAINER_BASE_NAME="berb-debian-env"
-    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-debian-env"
+    CONTAINER_BASE_NAME="berb-linux-env"
+    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb/debian-env'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
-    fn_bdm_docker_global_config
-    arr_actions_plugin=( "exit" )
-    declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 }
 
-fn_docker_plugin_conf
+fn_docker_plugin_container_conf
+fn_bdm_docker_container_config
+fn_bdm_docker_global_config
+arr_actions_plugin=( "exit" )
+declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
+
 while [ "${exit}" != "True" ]; do
     fn_bdm_docker_menu_fzf
 done
