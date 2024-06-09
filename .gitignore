@@ -5,7 +5,7 @@ pkg_rootfs
 
 ## Debhelper outputs
 debian/.debhelper/
-debian/berb-droidian-build-docker-mgr.substvars
-debian/berb-droidian-build-docker-mgr
+debian/berb-docker-mgr.substvars
+debian/berb-docker-mgr/
 debian/debhelper-build-stamp
 debian/files
