@@ -37,14 +37,21 @@
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
 fn_docker_plugin_container_conf() {
-    # docker_mode="package" ##Es defineix al build_main  
-    ## Docker constants
+    ## Docker container vars
     CONTAINER_BASE_NAME="berb-build-env"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb/build-essential'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
+    ## Paths configuration
+    SOURCES_FULLPATH="${START_DIR}"
+    OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}"
+    PACKAGES_DIR="${OUTPUT_FULLPATH}"
+    buildd_fullpath="${PACKAGES_DIR}" 
+    buildd_sources_fullpath="${SOURCES_FULLPATH}"
+    ## Create the output dir
+    [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
 }
 
 fn_build_package() {
