@@ -85,10 +85,10 @@ fn_copy_files_to_pkg_dir() {
         [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
     done <${debian_package_dirs_file_relpath}
     ## Copy the package files to the pkg rootfs dir
-    cp ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
-    cp libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}/
-    cp conf/*  ${pkg_rootfs_dir}/etc/${package_name}/
-    cp conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}/
+    cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+    cp -a libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}
+    cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
+    cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
 }
 
 fn_pkg_source_type_detection() {

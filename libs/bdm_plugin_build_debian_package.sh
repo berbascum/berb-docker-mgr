@@ -71,7 +71,7 @@ fn_plugin_sub_exec()  {
     fn_update_main_src_file_version_var
     ## Commit the prebuild changes
     fn_bblgit_changelog_commit
-    ## Copy the package fil3w to the pkg rootfs dir
+    ## Copy the package files to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
     ## Call build-package
     #fn_build_package_on_container
