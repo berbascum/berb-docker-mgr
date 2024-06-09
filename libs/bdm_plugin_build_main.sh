@@ -50,10 +50,10 @@ fn_get_package_info() {
 
 fn_update_main_src_file_version_var() {
     ## Update the TOOL_VERSION value on the main source file with the last tag version
-    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
-	tool_vers_var_name="TOOL_VERSION"
-    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
+    if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
         tool_vers_var_name="#TOOL_VERSION"
+    elif [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
+	tool_vers_var_name="TOOL_VERSION"
     else
         tool_vers_var_name=""
     fi
