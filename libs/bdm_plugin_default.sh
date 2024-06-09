@@ -38,11 +38,11 @@
 fn_docker_plugin_conf() {
     docker_mode="default"
     ## Docker constants
-    CONTAINER_BASE_NAME="berb-build-env"
-    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
+    CONTAINER_BASE_NAME="berb-debian-env"
+    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-debian-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
-    IMAGE_COMMIT_NAME='berb/build-essential'
+    IMAGE_COMMIT_NAME='berb/debian-env'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     fn_bdm_docker_global_config
     arr_actions_plugin=( "exit" )
