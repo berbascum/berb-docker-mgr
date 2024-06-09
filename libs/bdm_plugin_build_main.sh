@@ -38,59 +38,6 @@
 ## Include libs
 . /usr/lib/berb-bash-libs/bbl_git_lib.sh
 
-fn_update_main_src_file_version_var() {
-    ## Update the TOOL_VERSION value on the main source file with the last tag version
-    tag_version=$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')
-#OBTENIR num versio var TOOL_VERSION
-    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
-	tool_vers_var_name="TOOL_VERSION"
-    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
-        tool_vers_var_name="#TOOL_VERSION"
-    else
-        tool_vers_var_name=""
-    fi
-    if [ -n "${tool_vers_var_name}" ]; then
-	    tool_vers_var_version=$(cat )
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
-    fi
-        info "Creating tag \"${last_commit_tag}\" on the last commit..."
-	git tag "${last_commit_tag}"
-}
-
-fn_bblgit_last_two_tags_check() {
-    ## Check if the has commit has a tag
-    last_commit_tag="$(git tag --contains "HEAD")"
-    last_commit_id=$(git log --decorate  --abbrev-commit | head -n 1 | awk '{print $2}')
-    prev_last_commit_tag="$(git tag --sort=-creatordate | sed -n '2p')"
-    prev_last_commit_id=$(git log --decorate  --abbrev-commit \
-        | grep "${prev_last_commit_tag}" | head -n 1 | awk '{print $2}')
-	
-    if [ -z "${last_commit_tag}" ]; then
-        clear && info "The last commit has not assigned a tag and is required"
-        last_tag=$(git describe --tags --abbrev=0)
-        if [ -n "${last_tag}" ]; then
-	    last_commit_tagged=$(git log --decorate  --abbrev-commit \
-	       | grep 'tag:' | head -n 1 | awk '{print $2}')
-            info "Last commit taged \"${last_commit_tagged}\""
-            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}")
-            info "Last tag \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
-            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
-            [ -z "${answer}" ] && abort "Canceled by user!"
-            input_tag_is_valid=$(echo "${answer}" | grep "\/")
-            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
-            last_commit_tag="${answer}"
-	else
-            info "No git tags found!"
-            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
-            [ -z "${answer}" ] && abort "Canceled by user!"
-            input_tag_is_valid=$(echo "${answer}" | grep "\/")
-            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
-            last_commit_tag="${answer}"
-	fi
-    fi
-    info "Last commit tag defined: ${last_commit_tag}"
-}
-
 fn_get_package_info() {
     ## Get the package version and channel distribution from the last commit tag (mandatory)
     pkg_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
@@ -99,6 +46,21 @@ fn_get_package_info() {
     [ -z "${package_version}" ] && package_version="${package_version_tag}"
     info "pkg_dist_channel = ${pkg_dist_channel}"
     info "package_version = ${package_version}"
+}
+
+fn_update_main_src_file_version_var() {
+    ## Update the TOOL_VERSION value on the main source file with the last tag version
+    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
+	tool_vers_var_name="TOOL_VERSION"
+    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
+        tool_vers_var_name="#TOOL_VERSION"
+    else
+        tool_vers_var_name=""
+    fi
+    if [ -n "${tool_vers_var_name}" ]; then
+	    #tool_vers_var_version=$(cat )
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${package_version}\"/g" "${package_name}.sh"
+    fi
 }
 
 fn_pkg_source_type_detection() {
