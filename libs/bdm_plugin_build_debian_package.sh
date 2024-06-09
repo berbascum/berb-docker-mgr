@@ -54,7 +54,7 @@ fn_build_package() {
 #fn_plugin_build_debia_package() {
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
-##    fn_bblgit_workdir_status_check
+    fn_bblgit_workdir_status_check
     ## Check if the last commit has a tag
     fn_bblgit_last_two_tags_check
     ## Get package info
