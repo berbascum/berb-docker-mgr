@@ -74,7 +74,7 @@ fn_plugin_sub_exec()  {
     ## Copy the package files to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
     ## Call build-package
-    #fn_build_package_on_container
-    fn_build_package
+    fn_build_package_on_container
+    #fn_build_package
 }
 
