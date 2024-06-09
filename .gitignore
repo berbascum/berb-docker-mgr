@@ -1,6 +1,7 @@
 last_changes
 commit_msg
 sparse
+pkg_rootfs
 
 ## Debhelper outputs
 debian/.debhelper/
