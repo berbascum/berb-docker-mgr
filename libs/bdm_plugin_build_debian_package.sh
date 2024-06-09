@@ -48,7 +48,13 @@ fn_docker_plugin_container_conf() {
 }
 
 fn_build_package() {
-     info "TODO:"
+    dpkg-buildpackage -us -uc
+    INFO "Build package finished."
+}
+
+fn_build_package_on_container() {
+    docker exec -it $CONTAINER_NAME bash dpkg-buildpackage -us -uc
+    INFO "Build package finished."
 }
 
 #fn_plugin_build_debia_package() {
@@ -60,11 +66,15 @@ fn_plugin_sub_exec()  {
     ## Get package info
     fn_get_package_info
     ## Build the change log from the git history
-    fn_bblgit_changelog_build && fn_update_main_src_file_version_var
+    fn_bblgit_changelog_build
+    ## Update version and channel on the main src file
+    fn_update_main_src_file_version_var
+    ## Commit the prebuild changes
     fn_bblgit_changelog_commit
+    ## Copy the package fil3w to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
-exit
     ## Call build-package
+    #fn_build_package_on_container
     fn_build_package
 }
 
