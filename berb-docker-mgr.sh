@@ -39,8 +39,8 @@
 #################
 
 export TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
-#TOOL_VERSION="2.0.0.1"
-#TOOL_CHANNEL="develop"
+#TOOL_VERSION="2.1.1.1"
+#TOOL_CHANNEL="sid"
 TESTED_BASH_VER='5.2.15'
 
 #######################
