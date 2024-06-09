@@ -18,7 +18,6 @@ extra_packages=(
     "dh-make"
     "equivs"
     "dpkg-dev"
-    # afegeix més paquets aquí
 )
 
 extra_packages_string=$(printf "%s " "${extra_packages[@]}")
