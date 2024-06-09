@@ -63,6 +63,21 @@ fn_update_main_src_file_version_var() {
     fi
 }
 
+fn_copy_files_to_pkg_dir() {
+    ## Create dirs on pkg rootfs dir
+    debian_package_dirs_file_relpath="debian/${package_name}.dirs"
+    [ ! -f "${debian_package_dirs_file_relpath}" ] \
+	&& error "debian package dirs file not found!"
+    for dir in $(cat ${debian_package_dirs_file_relpath}); do
+        [ ! -d "${pkg_dir}${dir}" ] && mkdir -p -v ${pkg_dir}${dir}
+    done
+    ## Copy the package files to the pkg rootfs dir
+    cp -v ${package_name}.sh ${pkg_dir}/usr/bin/${package_name}
+    cp -v libs/*  ${pkg_dir}/usr/lib/${package_name}/
+    cp -v conf/*  ${pkg_dir}/etc/${package_name}/
+    cp -v conf_templates/*  ${pkg_dir}/usr/share/${package_name}/
+}
+
 fn_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)

@@ -62,6 +62,7 @@ fn_plugin_sub_exec()  {
     ## Build the change log from the git history
     fn_bblgit_changelog_build && fn_update_main_src_file_version_var
     fn_bblgit_changelog_commit
+    fn_copy_files_to_pkg_dir
 exit
     ## Call build-package
     fn_build_package
