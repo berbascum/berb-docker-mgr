@@ -60,7 +60,11 @@ fn_build_package() {
 }
 
 fn_build_package_on_container() {
-    docker exec -it $CONTAINER_NAME bash dpkg-buildpackage -us -uc
+    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    chmod +x ${SOURCES_FULLPATH}/build-debian-package.sh
+    docker exec -it $CONTAINER_NAME bash ${SOURCES_FULLPATH}/build-debian-package.sh
     INFO "Build package finished."
 }
 
