@@ -229,7 +229,7 @@ fn_create_container() {
 		-v ${buildd_local_repo_fullpath}:/buildd/local-repo \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
 	elif [[ "${docker_mode}" == "kernel" \
-            || ("${docker_mode}" == "package" && "${pkg_type}" == "standard_pkg") ]]; then
+            || ("${docker_mode}" == "package" && "${pkg_type}" == "debian_package") ]]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 		-v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
