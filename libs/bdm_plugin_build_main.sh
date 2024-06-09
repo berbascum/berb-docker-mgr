@@ -61,6 +61,18 @@ fn_update_main_src_file_version_var() {
 	    #tool_vers_var_version=$(cat )
         sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${package_version}\"/g" "${package_name}.sh"
     fi
+    ## Update the TOOL:CHANNEL value on the main source file with the last tag version
+    if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_CHANNEL=\"") ]; then
+        tool_vers_var_name="#TOOL_CHANNEL"
+    elif [ -n $(cat "${package_name}.sh" | grep "^TOOL_CHANNEL=\"") ]; then
+	tool_vers_var_name="TOOL_CHANNEL"
+    else
+        tool_vers_var_name=""
+    fi
+    if [ -n "${tool_vers_var_name}" ]; then
+	    #tool_vers_var_version=$(cat )
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${pkg_dist_channel}\"/g" "${package_name}.sh"
+    fi
 }
 
 fn_copy_files_to_pkg_dir() {
