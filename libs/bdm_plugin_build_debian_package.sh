@@ -58,7 +58,7 @@ fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
 ##    fn_bblgit_workdir_status_check
     ## Check if the last commit has a tag
-    fn_set_last_tag
+    fn_bblgit_last_two_tags_check
     # fn_update_main_src_file_version_var
     ## Get package info
     fn_get_package_info

@@ -57,7 +57,7 @@ fn_update_main_src_file_version_var() {
 	git tag "${last_commit_tag}"
 }
 
-fn_set_last_tag() {
+fn_bblgit_last_two_tags_check() {
     ## Check if the has commit has a tag
     last_commit_tag="$(git tag --contains "HEAD")"
     last_commit_id=$(git log --decorate  --abbrev-commit | head -n 1 | awk '{print $2}')
