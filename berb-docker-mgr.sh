@@ -57,6 +57,8 @@ fn_bdm_global_conf() {
     CONF_MAIN_FILENAME="bdm-main.conf"
     CONF_MAIN_FULLPATH="/etc/${TOOL_NAME}"
     CONF_MAIN_FULLPATH_FILENAME="${CONF_MAIN_FULLPATH}/${CONF_MAIN_FILENAME}"
+    CONF_USER_FULLPATH="${HOME}/.config/${TOOL_NAME}"
+    CONF_USER_MAIN_FILENAME="bdm-user-main.conf"
     ## Load libs
     . /usr/lib/berb-bash-libs/bbl_general_lib.sh
     . /usr/lib/berb-bash-libs/bbl_net_lib.sh
@@ -77,27 +79,29 @@ fn_bdm_global_conf() {
     fi
 }
 
-fn_bdm_user_conf_file_install() {
-    USER_CONF_FULLPATH="${HOME}/.config/${TOOL_NAME}"
-    USER_CONF_MAIN_FILENAME="bdm-user-main.conf"
-    USER_CONF_MAIN_FULLPATH_FILENAME="${USER_CONF_FULLPATH}/${USER_CONF_MAIN_FILENAME}"
-    ## If the main conf user file  not exist copy from template
-    [ ! -d "${USER_CONF_FULLPATH}" ] && mkdir "${USER_CONF_FULLPATH}" \
-	&& debug "Creating dir: ${USER_CONF_FULLPATH}"
-	if [ ! -f "${USER_CONF_MAIN_FULLPATH_FILENAME}" ]; then
-	cp "${TEMPLATES_FULLPATH}/${USER_CONF_MAIN_FILENAME}" "${USER_CONF_FULLPATH}"
-	debug "Copying user main conf file to: ${USER_CONF_FULLPATH}"
+fn_bdm_conf_file_install() {
+    conf_full_path="$1"
+    conf_filename="$2"
+    conf_fullpath_filename="${conf_full_path}/${conf_filename}"
+    ## If the conf file not exist copy from template
+    [ ! -d "${conf_full_path}" ] && mkdir "${conf_full_path}" \
+	&& debug "Creating dir: ${conf_full_path}"
+	if [ ! -f "${conf_fullpath_filename}" ]; then
+	cp "${TEMPLATES_FULLPATH}/${conf_filename}" "${conf_full_path}"
+	debug "Copying user main conf file to: ${conf_full_path}"
     fi
 }
 
-fn_bdm_user_conf_file_ask_empty_vars() {
-    section="global-vars"
-    fn_bbgl_parse_file_section USER_CONF_MAIN "${section}" "ask_empty_vars"
+fn_bdm_conf_file_ask_empty_vars() {
+    section="$1"
+    conf_sile_str="$2"
+    fn_bbgl_parse_file_section "${conf_sile_str}" "${section}" "ask_empty_vars"
 }
 
-fn_bdm_user_conf_file_load() {
-    section="global-vars"
-    fn_bbgl_parse_file_section USER_CONF_MAIN "${section}" "load_section"
+fn_bdm_conf_file_load() {
+    section="$1"
+    conf_sile_str="$2"
+    fn_bbgl_parse_file_section "${conf_sile_str}" "${section}" "load_section"
 }
 
 fn_bdm_load_plugin() {
@@ -465,11 +469,10 @@ fn_bbnl_ip_forward_activa
 fn_bbgl_configura_sudo
 fn_bbgl_check_bash_ver
 ## Load config files
-fn_bdm_user_conf_file_install
-fn_bdm_user_conf_file_ask_empty_vars
-fn_bdm_user_conf_file_load
+fn_bdm_conf_file_install "${CONF_USER_FULLPATH}" "${CONF_USER_MAIN_FILENAME}"
+fn_bdm_conf_file_ask_empty_vars "global-vars" "USER_CONF_MAIN"
+fn_bdm_conf_file_load "global-vars" "USER_CONF_MAIN"
 fn_bdm_load_plugin
-
 
 exit
 
