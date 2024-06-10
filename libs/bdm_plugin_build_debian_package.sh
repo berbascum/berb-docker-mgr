@@ -42,7 +42,7 @@ fn_docker_plugin_container_vars() {
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
-    IMAGE_COMMIT_NAME='berb/build-essential'
+    IMAGE_COMMIT_NAME='berb-build-env-upg'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     ## Paths configuration
     SOURCES_FULLPATH="${START_DIR}"
