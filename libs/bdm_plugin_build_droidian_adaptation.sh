@@ -38,11 +38,11 @@
 
 fn_docker_plugin_container_vars() {
     ## Docker container vars
-    CONTAINER_BASE_NAME="build-droidian-env"
-    IMAGE_BASE_NAME=""
-    IMAGE_BASE_TAG="${host_suite}-${host_arch}"
+    CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
+    IMAGE_BASE_NAME='quay.io/droidian/build-essential'
+    IMAGE_BASE_TAG="${droidian_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
-    IMAGE_COMMIT_NAME='build-droidian-env-upg'
+    IMAGE_COMMIT_NAME='droidian/build-essential-upg'
     IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
     ## Paths configuration
     SOURCES_FULLPATH="${START_DIR}"
