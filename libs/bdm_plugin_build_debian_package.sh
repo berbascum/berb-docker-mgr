@@ -36,7 +36,7 @@
 
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
-fn_docker_plugin_container_conf() {
+fn_docker_plugin_container_vars() {
     ## Docker container vars
     CONTAINER_BASE_NAME="berb-build-env-${package_name}"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
@@ -52,6 +52,12 @@ fn_docker_plugin_container_conf() {
     buildd_sources_fullpath="${SOURCES_FULLPATH}"
     ## Create the output dir
     [ -d "$PACKAGES_DIR" ] || mkdir -v $PACKAGES_DIR
+}
+
+fn_docker_plugin_container_conf() {
+    APT_INSTALL_REQ=""
+    # fn_install_apt_req
+    debug "fn_docker_plugin_container_conf from plugin_build_debian_package not used yet"
 }
 
 fn_build_package() {
