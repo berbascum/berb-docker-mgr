@@ -152,6 +152,7 @@ fn_pkg_source_type_detection() {
     fi
 }
 
+<< "NOT_USED_YET"
 fn_create_outputs_backup() {
     ## TODO: Needs a full revision
     ## Moving output deb files to $PACKAGES_DIR/debs
@@ -195,11 +196,19 @@ fn_create_outputs_backup() {
     fi
     cd $START_DIR
 }
+NOT_USED_YET
 
+
+## Script execution
 fn_pkg_source_type_detection
-fn_docker_plugin_container_conf
+fn_docker_plugin_container_vars
 fn_bdm_docker_container_config
-fn_bdm_docker_global_config
+## Check that the container name is started
+[ "$(docker ps | grep "${CONTAINER_NAME}")" ] \
+    && abort "The docker container needs to be started!"
+#
+fn_docker_plugin_container_conf
+fn_bdm_docker_main_menu
 arr_actions_plugin=( "exit" "plugin build ${pkg_type}" )
 declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 
