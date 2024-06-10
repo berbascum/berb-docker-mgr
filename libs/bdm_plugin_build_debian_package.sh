@@ -56,6 +56,7 @@ fn_docker_plugin_container_vars() {
 
 fn_docker_plugin_container_conf() {
     APT_INSTALL_REQ=""
+    APT_INSTALL_EXTRA=""
     # fn_install_apt_req
     debug "fn_docker_plugin_container_conf from plugin_build_debian_package not used yet"
 }
