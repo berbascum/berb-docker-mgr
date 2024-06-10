@@ -57,18 +57,8 @@ fn_docker_plugin_container_vars() {
 fn_docker_plugin_container_conf() {
     ## Install apt required packages on container
     APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
+    APT_INSTALL_EXTRA="releng-tools"
     fn_install_apt_req
-    #
-    ## Set SubPlugin build_droidian user conf file name
-    CONF_USER_DROIDIAN_FILENAME="bdm-user-droidian.conf"
-    CONF_USER_DROIDIAN_FULLPATH_FILENAME="${CONF_USER_FULLPATH}/${CONF_USER_DROIDIAN_FILENAME}"
-    #
-    ## Check and install SubPlugin build_droidian user conf file
-    fn_bdm_conf_file_install "${CONF_USER_FULLPATH}" "${CONF_USER_DROIDIAN_FILENAME}"
-    fn_bdm_conf_file_ask_empty_vars "CONF_USER_DROIDIAN" "global-vars"
-    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "global-vars"
-
-
 }
 
 fn_build_package_on_container() {
@@ -172,6 +162,7 @@ fn_plugin_sub_exec()  {
        ## Designed for build_debian_package but may be usefull in future
        # fn_update_main_src_file_version_var
     ## Commit the prebuild changes
+exit
     fn_bblgit_changelog_commit
     ## Copy the package files to the pkg rootfs dir
        ## Designed for build_debian_package but may be usefull in future

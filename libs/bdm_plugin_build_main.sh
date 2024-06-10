@@ -106,31 +106,41 @@ fn_pkg_source_type_detection() {
     fn_bblgit_debian_control_found # Abort if not
     ## Get the package name from debian control
     package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-
+    debug "dir .git and debian/control checks passed"
     # Cerca el dir pkg_rootfs
     if [ -e "${START_DIR}/pkg_rootfs" ]; then
 	## Set docker mode
 	docker_mode="package"
 	pkg_type="debian_package"
 	pkg_rootfs_dir="pkg_rootfs"
-        APT_INSTALL_EXTRA=""
 	info "Package type detected: \"${pkg_type}\""
 	## Source the corresponding pkg_type lib
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
-	pkg_rootfs_dir="sparse"
 	## Set docker mode
 	docker_mode="package"
+	pkg_rootfs_dir="sparse"
+	debug "sparse dir detected, checking type..."
+	## sparse dir found, may be a droidian package
+	[ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
+	    && abort "build_droidian_main library not found!"
+	debug "May be a Droidian package, loading build_droidian_main lib..."
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
+        fn_plugin_build_droidian_main_set_user_config
+        fn_plugin_build_droidian_main_load_device_vars
+	#
 	## Get the package type
 	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
-	    pkg_type="droidian_adapt"
-            APT_INSTALL_EXTRA="releng-tools"
-	    info "Package type detected: \"${pkg_type}\""
+	    pkg_type="droidian_adaptation"
+	    debug "Package type detected: \"${pkg_type}\""
 	    ## Import the build droidian package lib
-	    # . /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_adaptation.sh --run
-            ## Configure the droidian package source
-            #fn_docker_config_droidian_package_source
+	    [ -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
+	        && error "build_droidian_adaptation library not found!"
+	    debug "Loading plugin_build_${pkg_type} lib..."
+	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
+        else
+	    abort "Package is using sparse dir model, but type is not recognized!"
 	fi
     # Cerca un arxiu README de linux kernel
     elif [ -e "$START_DIR/Makefile" ]; then
