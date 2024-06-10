@@ -135,7 +135,7 @@ fn_pkg_source_type_detection() {
 	    pkg_type="droidian_adaptation"
 	    debug "Package type detected: \"${pkg_type}\""
 	    ## Import the build droidian package lib
-	    [ -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
+	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
 	        && error "build_droidian_adaptation library not found!"
 	    debug "Loading plugin_build_${pkg_type} lib..."
 	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
