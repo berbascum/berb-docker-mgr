@@ -167,13 +167,15 @@ fn_plugin_build_main_docker_container_reqs() {
     if [ -z "$(docker ps -a | grep "${CONTAINER_NAME}")" ]; then
         INFO "The docker container needs to be previously created"
         ASK "Want to create \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
-        [ "${answer}" == "y" ] && fn_bdm_docker_create_container
+        [ "${answer}" != "y" ] && abort "Aborted by user"
+	fn_bdm_docker_create_container
     fi
     ## Check that the container name is started
     if [ -z "$(docker ps | grep "${CONTAINER_NAME}")" ]; then
-        abort "The docker container needs to be previously started!"
+        INFO "The docker container needs to be previously started!"
         ASK "Want to start \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
-        [ "${answer}" == "y" ] && fn_bdm_docker_start_container
+        [ "${answer}" != "y" ] && abort "Aborted by user"
+        fn_bdm_docker_start_container
     fi
 }
 
@@ -230,9 +232,6 @@ fn_docker_plugin_container_vars
 fn_bdm_docker_container_config
 fn_plugin_build_main_docker_container_reqs
 
-#
-#
-exit
 fn_docker_plugin_container_conf
 fn_bdm_docker_main_menu
 arr_actions_plugin=( "exit" "plugin build ${pkg_type}" )
