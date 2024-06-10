@@ -162,6 +162,21 @@ fn_pkg_source_type_detection() {
     fi
 }
 
+fn_plugin_build_main_docker_container_reqs() {
+    ## Check that the container name is created
+    if [ -z "$(docker ps -a | grep "${CONTAINER_NAME}")" ]; then
+        INFO "The docker container needs to be previously created"
+        ASK "Want to create \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
+        [ "${answer}" == "y" ] && fn_bdm_docker_create_container
+    fi
+    ## Check that the container name is started
+    if [ -z "$(docker ps | grep "${CONTAINER_NAME}")" ]; then
+        abort "The docker container needs to be previously started!"
+        ASK "Want to start \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
+        [ "${answer}" == "y" ] && fn_bdm_docker_start_container
+    fi
+}
+
 << "NOT_USED_YET"
 fn_create_outputs_backup() {
     ## TODO: Needs a full revision
@@ -213,10 +228,11 @@ NOT_USED_YET
 fn_pkg_source_type_detection
 fn_docker_plugin_container_vars
 fn_bdm_docker_container_config
-## Check that the container name is started
-[ "$(docker ps | grep "${CONTAINER_NAME}")" ] \
-    && abort "The docker container needs to be started!"
+fn_plugin_build_main_docker_container_reqs
+
 #
+#
+exit
 fn_docker_plugin_container_conf
 fn_bdm_docker_main_menu
 arr_actions_plugin=( "exit" "plugin build ${pkg_type}" )
