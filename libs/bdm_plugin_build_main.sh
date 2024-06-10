@@ -50,6 +50,8 @@ fn_get_package_info() {
 
 fn_update_main_src_file_version_var() {
     ## Update the TOOL_VERSION value on the main source file with the last tag version
+    ## Firts, if not exist a script ${package_name}.sh exit the function
+    [ -n "${package_name}.sh" ] && return
     if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
         tool_vers_var_name="#TOOL_VERSION"
     elif [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
@@ -79,16 +81,20 @@ fn_copy_files_to_pkg_dir() {
     ## Create dirs on pkg rootfs dir
     info "Copying the package files to the pkg rootfs dir..."
     debian_package_dirs_file_relpath="debian/${package_name}.dirs"
-    [ ! -f "${debian_package_dirs_file_relpath}" ] \
-	&& error "debian package dirs file not found!"
-    while read dir; do
-        [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
-    done <${debian_package_dirs_file_relpath}
-    ## Copy the package files to the pkg rootfs dir
-    cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
-    cp -a libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}
-    cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
-    cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
+    if [ ! -f "${debian_package_dirs_file_relpath}" ]; then
+	info "debian package dirs file not found, the copy to pkg_rootfs wil  be skipped!"
+    else
+	ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
+	[ "${answer}" != "y" ] && debug "Copy to pkg_rootfs anceled by user!" && return
+        while read dir; do
+            [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
+        done <${debian_package_dirs_file_relpath}
+        ## Copy the package files to the pkg rootfs dir
+        cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+        cp -a libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}
+        cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
+        cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
+    fi
 }
 
 fn_pkg_source_type_detection() {
