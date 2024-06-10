@@ -223,11 +223,11 @@ fn_bdm_docker_create_container() {
 
     if [ -z "${CONTAINER_EXISTS}" ]; then
         INFO "Creating docker container \"${CONTAINER_NAME}\""
-	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" imgage..." 
+	info "using \"${IMAGE_NAME}:${IMAGE_TAG}\" image..." 
 	if [ "${docker_mode}" == "default" ]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
-	elif [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adapt" ]; then
+	elif [ "${docker_mode}" == "package" -a "${pkg_type}" == "droidian_adaptation" ]; then
 	    docker -v create --name ${CONTAINER_NAME} \
 	        -v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
