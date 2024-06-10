@@ -38,7 +38,7 @@
 
 fn_docker_plugin_container_conf() {
     ## Docker container vars
-    CONTAINER_BASE_NAME="berb-build-env"
+    CONTAINER_BASE_NAME="berb-build-env-${package_name}"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
