@@ -57,8 +57,10 @@ fn_docker_plugin_container_vars() {
 fn_docker_plugin_container_conf() {
     ## Install apt required packages on container
     APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
-    APT_INSTALL_EXTRA="releng-tools"
+    APT_INSTALL_BASE="releng-tools"
+    #APT_INSTALL_EXTRA=""
     fn_install_apt_req
+    fn_install_apt_base
 }
 
 fn_build_package_on_container() {
