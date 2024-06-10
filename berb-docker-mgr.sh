@@ -59,6 +59,7 @@ fn_bdm_global_conf() {
     CONF_MAIN_FULLPATH_FILENAME="${CONF_MAIN_FULLPATH}/${CONF_MAIN_FILENAME}"
     CONF_USER_FULLPATH="${HOME}/.config/${TOOL_NAME}"
     CONF_USER_MAIN_FILENAME="bdm-user-main.conf"
+    CONF_USER_MAIN_FULLPATH_FILENAME="${CONF_USER_FULLPATH}/${CONF_USER_MAIN_FILENAME}"
     ## Load libs
     . /usr/lib/berb-bash-libs/bbl_general_lib.sh
     . /usr/lib/berb-bash-libs/bbl_net_lib.sh
@@ -93,15 +94,15 @@ fn_bdm_conf_file_install() {
 }
 
 fn_bdm_conf_file_ask_empty_vars() {
-    section="$1"
-    conf_sile_str="$2"
-    fn_bbgl_parse_file_section "${conf_sile_str}" "${section}" "ask_empty_vars"
+    conf_file_str="$1"
+    section="$2"
+    fn_bbgl_parse_file_section "${conf_file_str}" "${section}" "ask_empty_vars"
 }
 
 fn_bdm_conf_file_load() {
-    section="$1"
-    conf_sile_str="$2"
-    fn_bbgl_parse_file_section "${conf_sile_str}" "${section}" "load_section"
+    conf_file_str="$1"
+    section="$2"
+    fn_bbgl_parse_file_section "${conf_file_str}" "${section}" "load_section"
 }
 
 fn_bdm_load_plugin() {
@@ -119,7 +120,7 @@ fn_bdm_load_plugin() {
 ######################
 ## Docker functions ##
 ######################
-fn_bdm_docker_global_config() {
+fn_bdm_docker_main_menu() {
     arr_actions_base=( \
 	"create container" \
 	"remove container" \
@@ -470,14 +471,15 @@ fn_bbgl_configura_sudo
 fn_bbgl_check_bash_ver
 ## Load config files
 fn_bdm_conf_file_install "${CONF_USER_FULLPATH}" "${CONF_USER_MAIN_FILENAME}"
-fn_bdm_conf_file_ask_empty_vars "global-vars" "USER_CONF_MAIN"
-fn_bdm_conf_file_load "global-vars" "USER_CONF_MAIN"
+fn_bdm_conf_file_ask_empty_vars "CONF_USER_MAIN" "global-vars"
+fn_bdm_conf_file_load "CONF_USER_MAIN" "global-vars"
+
 fn_bdm_load_plugin
 
 exit
 
 fn_pkg_source_type_detection
-# Ho criden els plugins fn_bdm_docker_global_config
+# Ho criden els plugins fn_bdm_docker_main_menu
 fn_action_prompt
 #fn_set_container_commit_if_exists
 
