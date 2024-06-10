@@ -113,7 +113,7 @@ fn_kernel_config_droidian() {
     	src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
     	dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
     	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
-    	fn_cmd_on_container
+    	fn_bdm_docker_cmd_on_container
         ## Check if the kernel snippet was created
         [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
 

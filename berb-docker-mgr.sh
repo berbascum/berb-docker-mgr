@@ -206,12 +206,12 @@ fn_bdm_docker_menu_fzf() {
     fi
 }
 
-fn_docker_multiarch_enable() {
+fn_bdm_docker_multiarch_enable() {
     ## Enable multiarch in docker as suggested in the official porting guide
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 }
 
-fn_create_container() {
+fn_bdm_docker_create_container() {
 # Creates the container
     info "CONTAINER_NAME = $CONTAINER_NAME"
     pause "Pausa..."
@@ -244,7 +244,7 @@ fn_create_container() {
 	fi
 	## Ask to start container
 	ASK "Want to start the container? [ y|n ]: "
-	[ "${answer}" == "y" ] && start_cont="True" && fn_start_container
+	[ "${answer}" == "y" ] && start_cont="True" && fn_bdm_docker_start_container
 	#Ask to install required apt packages
 	[ "${start_cont}" == "True" ] \
 	    && ASK "Want to install the required apt packages? [ y|n ]: "
@@ -264,7 +264,7 @@ fn_create_container() {
     fi
 }
 
-fn_remove_container() {
+fn_bdm_docker_remove_container() {
     # Removes a the container
     CONTAINER_EXIST=$(docker ps -a | grep -c "$CONTAINER_NAME")
     CONTAINER_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
@@ -276,7 +276,7 @@ fn_remove_container() {
     fi
     if [ "${answer}" == "yes" ]; then
  	info "Removing container..."
-	fn_stop_container
+	fn_bdm_docker_stop_container
 	docker rm $CONTAINER_ID
     else
 	info "Container $CONTAINER_NAME will NOT be removed as user choice"
@@ -284,19 +284,19 @@ fn_remove_container() {
     fi
 }
 
-fn_start_container() {
+fn_bdm_docker_start_container() {
     IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
     if [ "$IS_STARTED" -eq "0" ]; then
 	## Ask for enable multiarch support
 	ASK "Want to start the docker multiarch compat? [ y|n ]: "
-	[ "${answer}" == "y" ] && fn_docker_multiarch_enable
+	[ "${answer}" == "y" ] && fn_bdm_docker_multiarch_enable
 	## Start the container
         INFO "Starting container ${CONTAINER_NAME}"
 	docker start $CONTAINER_NAME
     fi
 }
 
-fn_stop_container() {
+fn_bdm_docker_stop_container() {
     INFO "Stopping container ${CONTAINER_NAME}"
     docker stop ${CONTAINER_NAME}
 }
@@ -306,7 +306,7 @@ fn_get_default_container_id() {
     DEFAULT_CONT_ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
 }
 
-fn_commit_container() {
+fn_bdm_docker_commit_container() {
     clear
     INFO "INFO about commiting containers"
     info "UNDER REVISION"
@@ -332,7 +332,7 @@ fn_commit_container() {
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
 	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 	INFO "Recreating ${CONTAINER_NAME} container from committed image ${IMAGE_NAME}:${IMAGE_TAG}..."
-	fn_create_container
+	fn_bdm_docker_create_container
 	INFO "Creation of another commit and container with the current state is finished!"
 	echo
     else
@@ -345,17 +345,17 @@ fn_commit_container() {
 	IMAGE_NAME="${IMAGE_COMMIT_NAME}"
 	IMAGE_TAG="${IMAGE_COMMIT_TAG}_latest"
 	INFO "Creating new ${CONTAINER_NAME} container from committed imag ${IMAGE_NAME}:${IMAGE_TAG}..."
-	fn_create_container
+	fn_bdm_docker_create_container
 	INFO "Creation of the first commit and container with the current state is finished!"
 	echo
     fi
 }	
 
-fn_shell_to_container() {
+fn_bdm_docker_shell_to_container() {
     docker exec -it $CONTAINER_NAME bash --login
 }
 
-fn_cmd_on_container() {
+fn_bdm_docker_cmd_on_container() {
     docker exec -it ${CONTAINER_NAME} ${CMD}
 }
 
@@ -375,9 +375,9 @@ fn_install_apt() {
     APT_UPDATE="apt-get update"
     APT_UPGRADE="apt-get upgrade -y"
     APT_INSTALL="apt-get install -y "${packages}""
-    CMD="$APT_UPDATE" && fn_cmd_on_container
-    CMD="$APT_UPGRADE" && fn_cmd_on_container
-    CMD="$APT_INSTALL" && fn_cmd_on_container
+    CMD="$APT_UPDATE" && fn_bdm_docker_cmd_on_container
+    CMD="$APT_UPGRADE" && fn_bdm_docker_cmd_on_container
+    CMD="$APT_INSTALL" && fn_bdm_docker_cmd_on_container
 }
 
 fn_install_apt_req() {
@@ -488,21 +488,21 @@ fn_action_prompt
 
 ## Execute action on container name
 if [ "$ACTION" == "create" ]; then
-    fn_create_container
+    fn_bdm_docker_create_container
 elif [ "$ACTION" == "remove" ]; then
-    fn_remove_container
+    fn_bdm_docker_remove_container
 elif [ "$ACTION" == "start" ]; then
-    fn_start_container
+    fn_bdm_docker_start_container
 elif [ "$ACTION" == "stop" ]; then
-    fn_stop_container
+    fn_bdm_docker_stop_container
 elif [ "$ACTION" == "shell-to" ]; then
-    fn_shell_to_container
+    fn_bdm_docker_shell_to_container
 elif [ "$ACTION" == "command-to" ]; then
-   fn_cmd_on_container
+   fn_bdm_docker_cmd_on_container
 elif [ "$ACTION" == "install-apt-extra" ]; then
     fn_install_apt_extra
 elif [ "$ACTION" == "commit-container" ]; then
-    fn_commit_container
+    fn_bdm_docker_commit_container
 elif [ "$ACTION" == "config-droidian-kernel" ]; then
     fn_kernel_config_droidian
 elif [ "$ACTION" == "build-kernel-on-container" ]; then
