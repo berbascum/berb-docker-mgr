@@ -99,15 +99,17 @@ fn_build_package_on_container() {
     build_script_name="build-package-with-droidian-releng.sh"
     bdm_url_base="https://raw.githubusercontent.com/berbascum/berb-docker-mgr"
     bdm_url_build_script_relpath="sid/libs/${build_script_name}"
+    ## Download the build launcher script
+    rm ${SOURCES_FULLPATH}/${build_script_name}
     wget "${bdm_url_base}/${bdm_url_build_script_relpath}"
-
-
-
     ## Set x permissions
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
+    ## Remove the build script
     rm ${SOURCES_FULLPATH}/${build_script_name}
+    ## Some output files may have owned by root, fixing:
+    ${SUDO} chown -R ${USER}: "${OUTPUT_FULLPATH}"
 
     INFO "Build package finished."
 }
@@ -127,6 +129,9 @@ fn_plugin_sub_exec()  {
        # fn_update_main_src_file_version_var
     ## Commit the prebuild changes
 #    fn_bblgit_changelog_commit
+    ## Create the tag from user input
+    fn_bblgit_create_tag
+
     ## Copy the package files to the pkg rootfs dir
        ## Designed for build_debian_package but may be usefull in future
        # fn_copy_files_to_pkg_dir
