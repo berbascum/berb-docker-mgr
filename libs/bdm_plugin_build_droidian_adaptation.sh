@@ -93,22 +93,17 @@ fn_docker_plugin_container_conf() {
 }
 
 fn_build_package_on_container() {
-    # Configuring the build execution
+    # Configuring the build script
     build_script_name="build-package-with-droidian-releng.sh"
+    bdm_url_base="https://raw.githubusercontent.com/berbascum/berb-docker-mgr"
+    bdm_url_build_script_relpath="sid/libs/${build_script_name}"
+    wget "${bdm_url_base}/${bdm_url_build_script_relpath}"
 
+    ## TODO: Move to call before to avoid unclean workdir, may be commit the changes
     ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
     fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
-exit
-
-    ## Create a build launcher and copy to the sources dir
-    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/${build_script_name}
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/${build_script_name}
-    echo >> ${SOURCES_FULLPATH}/${build_script_name}
 
 
-    #cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
-    #    ${SOURCES_FULLPATH}
     ## Set x permissions
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
     ## Build package on container
