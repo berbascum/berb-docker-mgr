@@ -209,7 +209,7 @@ fn_bdm_docker_menu_fzf() {
 
 fn_bdm_docker_multiarch_enable() {
     ## Enable multiarch in docker as suggested in the official porting guide
-    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    docker run --privileged multiarch/qemu-user-static --reset -p yes
 }
 
 fn_bdm_docker_create_container() {
