@@ -110,7 +110,7 @@ fn_build_package_on_container() {
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
     ## Remove the build script
-    #rm ${SOURCES_FULLPATH}/${build_script_name}
+    rm ${SOURCES_FULLPATH}/${build_script_name}
     ## Some output files may have owned by root, fixing:
     ${SUDO} chown -R ${USER}: "${OUTPUT_FULLPATH}"
 
