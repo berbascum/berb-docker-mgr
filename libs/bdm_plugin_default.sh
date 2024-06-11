@@ -42,8 +42,8 @@ fn_docker_plugin_container_conf() {
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
-    IMAGE_COMMIT_NAME='berb/debian-env'
-    IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
+    IMAGE_COMMIT_NAME='berb-linux-env-upg'
+    IMAGE_COMMIT_TAG="${host_suite}-${host_arch}"
 }
 
 fn_docker_plugin_container_conf
