@@ -97,6 +97,47 @@ fn_copy_files_to_pkg_dir() {
     fi
 }
 
+fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
+    ## Add the systemd wants links from pkg rootfs directory to debian .links ans .dirs
+    ## Set paths
+    pkg_rootfs_dir="$1"
+    systemd_etc_dir="etc/systemd/system"
+    pkg_systemd_etc_dir="${pkg_rootfs_dir}/${systemd_etc_dir}"
+    ## Check for systemd dir in the pkg_rootfs dir
+    [ ! -d "${pkg_systemd_etc_dir}" ] \
+	&& info "No etc/systemd dir found in pkg_rootfs" && return
+    ## Search for debian pkging .links file
+    arr_pkg_links_file=( $(find debian/ -name "${package_name}*.links") )
+    [ "${#arr_pkg_links_file[@]}" -eq "0" ] \
+	&& info "No .links file in debian dir" && return
+    [ "${#arr_pkg_links_file[@]}" -gt "1" ] \
+	&& info "Many .links files in debian dir" && return
+    pkg_links_file="${arr_pkg_links_file[0]}"
+    debug "Length arr_pkg_links_file = ${#arr_pkg_links_file[@]}" 
+    #
+    ## Search for systemd services in the pkg_rootfs dir
+    arr_service_files=()
+    while IFS= read -r -d '' file; do
+        arr_service_files+=("$file")
+    done < <(find "${pkg_systemd_etc_dir}" -maxdepth 1 -name "*.service" -print0)
+    debug "arr_service_files[0] = ${arr_service_files[0]}"
+    #
+    ## Add systemd service links to the debian/adaptation.links
+    for service_file in ${arr_service_files[@]}; do
+        service_file_basename=$(basename "${service_file}")
+        service_name="${service_file_basename%%.*}"
+	debug "service_file = ${service_file}"
+        ## Search for wantedby var on each service file and get its value
+        wanted_by=$(cat "${service_file}" | grep "WantedBy" | awk -F'=' '{print $2}')
+	debug "wanted_by = ${wanted_by}"
+        [ -z "${wanted_by}" ] && continue
+	link_found=$(cat ${pkg_links_file} | grep "${service_file_basename}")
+	debug "link_found = \"${link_found}\" if empty, service will be added"
+        [ -n "${link_found}" ] && continue
+        echo "/${systemd_etc_dir}/${service_file_basename} /${systemd_etc_dir}/${wanted_by}.wants" >> ${pkg_links_file}
+    done
+}
+
 fn_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)

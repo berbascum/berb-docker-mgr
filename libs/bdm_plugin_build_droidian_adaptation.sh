@@ -33,6 +33,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+## some notes ##
+## The build adaptation process consists on thre  parts:
+# new-template: (outside docker) The adaptation scripts are used to create a new device temp
+ # build: (on docker) execute releng-build-package on a container
+ # sign: (outside docker) droidian-build-tools script signs the packages
+ # recipes creation: src/build-tools/image.sh found on:
+   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian
+ # debs creation: found on:
+   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian/apt
 
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
@@ -80,77 +89,43 @@ fn_docker_plugin_build_droidian_adapt_tools_prep() {
 }
 
 fn_docker_plugin_container_conf() {
-    debug "fn_docker_plugin_container_conf empty"
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
 }
 
 fn_build_package_on_container() {
-## TODO: Imported from build_debian_package. Needs to be adapted first
+    # Configuring the build execution
+    build_script_name="build-package-with-droidian-releng.sh"
+
     ## Create a build launcher and copy to the sources dir
-    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/${build_script_name}
+    echo >> ${SOURCES_FULLPATH}/${build_script_name}
 
-    echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/build-debian-package.sh
 
+    #cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
+    #    ${SOURCES_FULLPATH}
     ## Set x permissions
-    chmod +x ${SOURCES_FULLPATH}/build-debian-package.sh
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/build-debian-package.sh
-    rm ${SOURCES_FULLPATH}/build-debian-package.sh
+    chmod +x ${SOURCES_FULLPATH}/${build_script_name}
+    ## Build package on container
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
+    rm ${SOURCES_FULLPATH}/${build_script_name}
+
     INFO "Build package finished."
 }
 
 << "IMPORTED_OLD_INITIAL_DROIDIAN-PLUGIN"
 # TODO:
-## The build adaptation process consists on thre  parts:
-# new-template: (outside docker) The adaptation scripts are used to create a new device temp
- # build: (on docker) execute releng-build-package on a container
- # sign: (outside docker) droidian-build-tools script signs the packages
- # recipes creation: src/build-tools/image.sh found on:
-   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian
- # debs creation: found on:
-   # droidian-build-tools/bin/droidian/<vendor>-<code-name>/droidian/apt
-    #
 
-    #
-    #
-    # Configuring the build execution
-    build_script_name="build-package-with-droidian-releng.sh"
 
-    ## TODO Recreate the systemd wants links on the sparse directory
-    #[ ! -f "create-services-links.sh" ] && abort "create-services-links.sh not found!"
-    #./create-services-links.sh
     #
     #@ TODO: Copy the package files to the sparse dir
     #/usr/lib/berb-droidian-build-docker-mgr/cp_pkg_files_2_sparse_dir.sh --run
     #
-    ## Copy the  releng caller script to the 
-    ## TODO Put in a apt repo and install the package from de docker container
 
-## TODO: DOCKER MGR CONTROL DEPS WITH ADAPT-HELPER
-## TODO: APT REPO JAAAA || CREAR DEV TEMPLATE PER A UNES KEYS GPG
-## TODO: Solucionar depends releng. Potser fer rebuild posant les meves deps
-## TODO: IMPROVE PATH DEL device_info
-## TODO: SOLUCIONAR INSTAL:LAR DOCKER MANAGER AL CONTAINER PER TENIR BUILD SCRIPT DIRECTE
-## TODO: 
-## TODO: SEPARAR FUNCIONS EN ARXIUS DIFERENTS
-## TODO: 
-## TODO: IMPLEMENTAR MODE ADAPTATION
-## TODO: SOLUCIÓ MÉS NETA PER VERSIÓ DE RELENG-BUILD-CHANGELOG
-## TODO: ORDENAR PART DEK KERNEL
 
-    cp /usr/lib/berb-droidian-build-docker-mgr/${build_script_name} \
-        ${SOURCES_FULLPATH}
-    chmod +x ${SOURCES_FULLPATH}/${build_script_name}
-    #
-    ## Build package on container
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
-    #missatge "Docker command is disabled for testing!"
-    #
-    ## Removing the build script from the package root dir
-    rm ${SOURCES_FULLPATH}/${build_script_name}
 
-    info "Build package finished."
 
 
 IMPORTED_OLD_INITIAL_DROIDIAN-PLUGIN

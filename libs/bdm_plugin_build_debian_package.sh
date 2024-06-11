@@ -56,7 +56,8 @@ fn_docker_plugin_container_vars() {
 }
 
 fn_docker_plugin_container_conf() {
-    debug "fn_docker_plugin_container_conf empty"
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
 }
 
 fn_build_package() {
