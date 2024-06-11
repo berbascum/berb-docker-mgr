@@ -50,10 +50,10 @@ fn_docker_plugin_container_vars() {
     fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-vars"
     CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
-    IMAGE_BASE_TAG="${droidian_suite}-${host_arch}"
+    IMAGE_BASE_TAG="${droidian_host_suite}-${droidian_host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='droidian/build-essential-upg'
-    IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
+    IMAGE_COMMIT_TAG="${droidian_host_suite}-${droidian_host_arch}"
     ## Paths configuration
     SOURCES_FULLPATH="${START_DIR}"
     OUTPUT_FULLPATH="${SOURCES_FULLPATH}/out-${package_name}"
@@ -104,10 +104,13 @@ fn_build_package_on_container() {
     wget "${bdm_url_base}/${bdm_url_build_script_relpath}"
     ## Set x permissions
     chmod +x ${SOURCES_FULLPATH}/${build_script_name}
+    ## Config the releng arch in the build launcher
+    sed -i "s/RELENG_HOST_ARCH=\".*\"/RELENG_HOST_ARCH=\"${releng_host_arch}\"/g" \
+	${SOURCES_FULLPATH}/${build_script_name}
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
     ## Remove the build script
-    rm ${SOURCES_FULLPATH}/${build_script_name}
+    #rm ${SOURCES_FULLPATH}/${build_script_name}
     ## Some output files may have owned by root, fixing:
     ${SUDO} chown -R ${USER}: "${OUTPUT_FULLPATH}"
 
