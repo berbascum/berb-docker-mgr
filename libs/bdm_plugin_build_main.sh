@@ -98,22 +98,32 @@ fn_copy_files_to_pkg_dir() {
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
-    ## Add the systemd wants links from pkg rootfs directory to debian .links ans .dirs
+    ## Add the systemd wants links from pkg rootfs dir to debian .links and .dirs
     ## Set paths
     pkg_rootfs_dir="$1"
     systemd_etc_dir="etc/systemd/system"
     pkg_systemd_etc_dir="${pkg_rootfs_dir}/${systemd_etc_dir}"
+    info "Adding systemd wants links from pkg rootfs dir to debian .links and .dirs..."
     ## Check for systemd dir in the pkg_rootfs dir
     [ ! -d "${pkg_systemd_etc_dir}" ] \
 	&& info "No etc/systemd dir found in pkg_rootfs" && return
     ## Search for debian pkging .links file
     arr_pkg_links_file=( $(find debian/ -name "${package_name}*.links") )
     [ "${#arr_pkg_links_file[@]}" -eq "0" ] \
-	&& info "No .links file in debian dir" && return
+	&& warn "No .links file in debian dir" && return
     [ "${#arr_pkg_links_file[@]}" -gt "1" ] \
-	&& info "Many .links files in debian dir" && return
+	&& warn "Many .links files in debian dir" && return
     pkg_links_file="${arr_pkg_links_file[0]}"
     debug "Length arr_pkg_links_file = ${#arr_pkg_links_file[@]}" 
+    ## Search for debian pkging .dirs file
+    arr_pkg_dirs_file=( $(find debian/ -name "${package_name}*.dirs") )
+    [ "${#arr_pkg_dirs_file[@]}" -eq "0" ] \
+	&& warn "No .dirs file in debian dir" && return
+    [ "${#arr_pkg_dirs_file[@]}" -gt "1" ] \
+	&& warn "Many .dirs files in debian dir" && return
+    pkg_dirs_file="${arr_pkg_dirs_file[0]}"
+    debug "Length arr_pkg_dirs_file = ${#arr_pkg_dirs_file[@]}" 
+
     #
     ## Search for systemd services in the pkg_rootfs dir
     arr_service_files=()
@@ -123,19 +133,31 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
     debug "arr_service_files[0] = ${arr_service_files[0]}"
     #
     ## Add systemd service links to the debian/adaptation.links
+    arr_services_wanted=()
     for service_file in ${arr_service_files[@]}; do
         service_file_basename=$(basename "${service_file}")
         service_name="${service_file_basename%%.*}"
 	debug "service_file = ${service_file}"
-        ## Search for wantedby var on each service file and get its value
+        ## Search for wanted_by var on each service file and get its value
         wanted_by=$(cat "${service_file}" | grep "WantedBy" | awk -F'=' '{print $2}')
 	debug "wanted_by = ${wanted_by}"
         [ -z "${wanted_by}" ] && continue
+	## Add wanted_by to an array without dups, to add the dirs in the debian .dirs file
+	wanted_dup=$(echo "${arr_services_wanted[*]}" | grep "${wanted_by}")
+	[ -z "${wanted_dup}" ] && arr_services_wanted+=( "${wanted_by}" )
+	## Check if the service was previouslu added
 	link_found=$(cat ${pkg_links_file} | grep "${service_file_basename}")
 	debug "link_found = \"${link_found}\" if empty, service will be added"
         [ -n "${link_found}" ] && continue
+	## Add the service link to the debian .links file
         echo "/${systemd_etc_dir}/${service_file_basename} /${systemd_etc_dir}/${wanted_by}.wants" >> ${pkg_links_file}
     done
+    ## Add wanted dir in debian/.dirs file
+    debug "Length arr_services_wanted = ${#arr_services_wanted[@]}"
+    for service_wanted in "${arr_services_wanted[@]}"; do
+        echo "/${systemd_etc_dir}/${service_wanted}.wants" >> ${pkg_dirs_file}
+    done
+    info "Finished adding systemd wants links on debian .links and .dirs"
 }
 
 fn_pkg_source_type_detection() {
