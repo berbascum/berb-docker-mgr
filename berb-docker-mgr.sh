@@ -208,13 +208,22 @@ fn_bdm_docker_menu_fzf() {
 }
 
 fn_bdm_docker_multiarch_enable() {
-    ## Enable multiarch in docker as suggested in the official porting guide
-    docker run --privileged multiarch/qemu-user-static --reset -p yes
+    ${SUDO} apt-get update && apt-get install -y qemu-user-static
+    ${SUDO} dpkg --add-architecture ${target_arch}
+    arr_apt_pkgs_cross_arm64=( "gcc-${cross_arch}-linux-gnu" "g++-${cross_arch}-linux-gnu" \
+	                       "libc6-${target_arch}-cross" )
+    arr_packages=( ${arr_apt_pkgs_cross_arm64[@]} ) && fn_bdm_docker_apt_install_pks
+    #apt-get install binfmt-support
+
+    ## Enable multiarch in docker as suggested in the official Droidian porting guide
+    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    sleep 5
 }
 
 fn_bdm_docker_create_container() {
 # Creates the container
-    info "CONTAINER_NAME = $CONTAINER_NAME"
+    info "CONTAINER_NAME = ${CONTAINER_NAME}"
+    info "IMAGE_NAME:TAG = ${IMAGE_NAME}:${IMAGE_TAG}"
     pause "Pausa..."
 
     CONTAINER_EXISTS=$(docker ps -a | grep ${CONTAINER_NAME})
