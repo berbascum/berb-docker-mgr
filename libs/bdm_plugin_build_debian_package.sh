@@ -56,8 +56,7 @@ fn_docker_plugin_container_vars() {
 }
 
 fn_docker_plugin_container_conf() {
-    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
-    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
+    debug "fn_docker_plugin_container_conf has no any code yet!"
 }
 
 fn_build_package() {
@@ -66,6 +65,9 @@ fn_build_package() {
 }
 
 fn_build_package_on_container() {
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
+    #
     ## Create a build launcher and copy to the sources dir
     echo "#!/bin/bash" > ${SOURCES_FULLPATH}/build-debian-package.sh
     echo >> ${SOURCES_FULLPATH}/build-debian-package.sh

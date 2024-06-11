@@ -89,13 +89,16 @@ fn_docker_plugin_build_droidian_adapt_tools_prep() {
 }
 
 fn_docker_plugin_container_conf() {
-    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
-    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
+    debug "fn_docker_plugin_container_conf has no any code yet!"
 }
 
 fn_build_package_on_container() {
     # Configuring the build execution
     build_script_name="build-package-with-droidian-releng.sh"
+
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
+exit
 
     ## Create a build launcher and copy to the sources dir
     echo "#!/bin/bash" > ${SOURCES_FULLPATH}/${build_script_name}
@@ -115,29 +118,12 @@ fn_build_package_on_container() {
     INFO "Build package finished."
 }
 
-<< "IMPORTED_OLD_INITIAL_DROIDIAN-PLUGIN"
-# TODO:
-
-
-    #
-    #@ TODO: Copy the package files to the sparse dir
-    #/usr/lib/berb-droidian-build-docker-mgr/cp_pkg_files_2_sparse_dir.sh --run
-    #
-
-
-
-
-
-IMPORTED_OLD_INITIAL_DROIDIAN-PLUGIN
-
-#fn_plugin_build_debian_package() {
-
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
     fn_bblgit_workdir_status_check
 
     ## Check if the last commit has a tag
-#    fn_bblgit_last_two_tags_check
+    fn_bblgit_last_two_tags_check
     ## Get package info
 #    fn_get_package_info
     ## Build the change log from the git history
@@ -151,6 +137,5 @@ fn_plugin_sub_exec()  {
        ## Designed for build_debian_package but may be usefull in future
        # fn_copy_files_to_pkg_dir
     ## Call build-package
-
     fn_build_package_on_container
 }
