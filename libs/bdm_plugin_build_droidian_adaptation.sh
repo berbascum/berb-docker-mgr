@@ -89,7 +89,9 @@ fn_docker_plugin_build_droidian_adapt_tools_prep() {
 }
 
 fn_docker_plugin_container_conf() {
-    debug "fn_docker_plugin_container_conf has no any code yet!"
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
+    #debug "fn_docker_plugin_container_conf has no any code yet!"
 }
 
 fn_build_package_on_container() {
@@ -99,9 +101,6 @@ fn_build_package_on_container() {
     bdm_url_build_script_relpath="sid/libs/${build_script_name}"
     wget "${bdm_url_base}/${bdm_url_build_script_relpath}"
 
-    ## TODO: Move to call before to avoid unclean workdir, may be commit the changes
-    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
-    fn_plugin_build_main_pkg_rootfs_systemd_links_add "${pkg_rootfs_dir}"
 
 
     ## Set x permissions

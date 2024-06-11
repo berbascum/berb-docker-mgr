@@ -123,7 +123,6 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
 	&& warn "Many .dirs files in debian dir" && return
     pkg_dirs_file="${arr_pkg_dirs_file[0]}"
     debug "Length arr_pkg_dirs_file = ${#arr_pkg_dirs_file[@]}" 
-
     #
     ## Search for systemd services in the pkg_rootfs dir
     arr_service_files=()
@@ -150,11 +149,16 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
 	debug "link_found = \"${link_found}\" if empty, service will be added"
         [ -n "${link_found}" ] && continue
 	## Add the service link to the debian .links file
-        echo "/${systemd_etc_dir}/${service_file_basename} /${systemd_etc_dir}/${wanted_by}.wants" >> ${pkg_links_file}
+        echo "/${systemd_etc_dir}/${service_file_basename} /${systemd_etc_dir}/${wanted_by}.wants/${service_file_basename}" >> ${pkg_links_file}
     done
     ## Add wanted dir in debian/.dirs file
     debug "Length arr_services_wanted = ${#arr_services_wanted[@]}"
     for service_wanted in "${arr_services_wanted[@]}"; do
+	## Check if the wanted dir was previouslu added
+	wanted_dir_found=$(cat ${pkg_dirs_file} | grep "${service_wanted}")
+	debug "wanted_dir_found = \"${wanted_dir_found}\" if empty, dir will be added"
+        [ -n "${wanted_dir_found}" ] && continue
+	## Add the service link to the debian .links file
         echo "/${systemd_etc_dir}/${service_wanted}.wants" >> ${pkg_dirs_file}
     done
     info "Finished adding systemd wants links on debian .links and .dirs"
