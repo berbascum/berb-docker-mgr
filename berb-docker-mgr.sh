@@ -127,7 +127,7 @@ fn_bdm_docker_main_menu() {
 	"start container" \
 	"stop container" \
 	"shell to container" \
-	"command to container" \
+	"command inside container" \
 	"commit container" \
     )
 << "DEFINED_IN_PLUGINS"
@@ -246,18 +246,8 @@ fn_bdm_docker_create_container() {
 	## Ask to start container
 	ASK "Want to start the container? [ y|n ]: "
 	[ "${answer}" == "y" ] && start_cont="True" && fn_bdm_docker_start_container
-	#Ask to install required apt packages
-	[ "${start_cont}" == "True" ] \
-	    && ASK "Want to install the required apt packages? [ y|n ]: "
-	[ "${answer}" == "y" ] && req_inst="True" && fn_install_apt_req
-	#Ask to install basic apt packages
-	[ "${req_inst}" == "True" ] \
-	    && ASK "Want to install the basic apt packages? [ y|n ]: "
-	[ "${answer}" == "y" ] && base_inst="True" && fn_install_apt_base
-	#Ask to install extra apt packages
-	[ "${base_inst}" == "True" ] \
-	    && ASK "Want to install the extra apt packages? [ y|n ]: "
-	[ "${answer}" == "y" ] && fn_install_apt_extra
+	## Ask to install apt packages inside the container
+        fn_bdm_docker_apt_ask_if_install_pkgs_full
 
 	info "Container created!"
     else
@@ -356,8 +346,8 @@ fn_bdm_docker_shell_to_container() {
     docker exec -it $CONTAINER_NAME bash --login
 }
 
-fn_bdm_docker_cmd_on_container() {
-    docker exec -it ${CONTAINER_NAME} ${CMD}
+fn_bdm_docker_cmd_inside_container() {
+    docker exec -it ${CONTAINER_NAME} $@
 }
 
 fn_cp_to_container() {
@@ -371,31 +361,33 @@ fn_cp_from_container() {
 ################################
 ## APT on container functions ##
 ################################
-fn_install_apt() {
-    packages="$1"
-    APT_UPDATE="apt-get update"
-    APT_UPGRADE="apt-get upgrade -y"
-    APT_INSTALL="apt-get install -y "${packages}""
-    CMD="$APT_UPDATE" && fn_bdm_docker_cmd_on_container
-    CMD="$APT_UPGRADE" && fn_bdm_docker_cmd_on_container
-    CMD="$APT_INSTALL" && fn_bdm_docker_cmd_on_container
+fn_bdm_docker_apt_ask_if_install_pkgs_full() {
+	#Ask to install required apt packages
+	[ "${start_cont}" == "True" ] \
+	    && ASK "Want to install the required apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] && req_inst="True" \
+            && arr_packages=( ${arr_apt_pkgs_req[@]} ) && fn_bdm_docker_apt_install_pks
+	#Ask to install basic apt packages
+	[ "${req_inst}" == "True" ] \
+	    && ASK "Want to install the basic apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] && base_inst="True" \
+	    && arr_packages=( ${arr_apt_pkgs_base[@]} ) && fn_bdm_docker_apt_install_pks
+	#Ask to install extra apt packages
+	[ "${base_inst}" == "True" ] \
+	    && ASK "Want to install the extra apt packages? [ y|n ]: "
+	[ "${answer}" == "y" ] \
+	    && arr_packages=( ${arr_apt_pkgs_extra[@]} ) && fn_bdm_docker_apt_install_pks
 }
 
-fn_install_apt_req() {
-    APT_INSTALL_REQ=""
-    fn_install_apt "${APT_INSTALL_REQ}"
+fn_bdm_docker_apt_install_pks() {
+    fn_bdm_docker_cmd_inside_container apt-get update
+    fn_bdm_docker_cmd_inside_container apt-get install -y ${arr_packages[@]}
 }
-
-fn_install_apt_base() {
-    APT_INSTALL_BASE="vim git wget less bash-completion rsync net-tools"
-    fn_install_apt "${APT_INSTALL_BASE}"
+fn_bdm_docker_apt_upgrade_install_pks() {
+    fn_bdm_docker_cmd_inside_container apt-get update
+    fn_bdm_docker_cmd_inside_container apt-get upgrade -y
+    fn_bdm_docker_cmd_inside_container apt-get install -y ${arr_packages[@]}
 }
-
-fn_install_apt_extra() {
-    ## APT_INSTALL_EXTRA is defined on the pachage type (kernel, package, etc) docker config sections
-    fn_install_apt "${APT_INSTALL_EXTRA}"
-}
-
 ############################
 ## Config build functions ##
 ############################
@@ -499,9 +491,9 @@ elif [ "$ACTION" == "stop" ]; then
 elif [ "$ACTION" == "shell-to" ]; then
     fn_bdm_docker_shell_to_container
 elif [ "$ACTION" == "command-to" ]; then
-   fn_bdm_docker_cmd_on_container
+   fn_bdm_docker_cmd_inside_container
 elif [ "$ACTION" == "install-apt-extra" ]; then
-    fn_install_apt_extra
+    fn_bdm_docker_apt_install_pks  _extra
 elif [ "$ACTION" == "commit-container" ]; then
     fn_bdm_docker_commit_container
 elif [ "$ACTION" == "config-droidian-kernel" ]; then

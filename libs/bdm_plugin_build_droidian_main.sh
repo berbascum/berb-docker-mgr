@@ -50,3 +50,4 @@ fn_plugin_build_droidian_main_load_device_vars() {
     fn_bdm_conf_file_ask_empty_vars "CONF_USER_DROIDIAN" "device-vars"
     fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "device-vars"
 }
+ 

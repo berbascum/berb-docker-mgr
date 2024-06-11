@@ -38,6 +38,7 @@
 
 fn_docker_plugin_container_vars() {
     ## Docker container vars
+    fn_bdm_conf_file_load "CONF_USER_MAIN" "docker-container-vars"
     CONTAINER_BASE_NAME="berb-build-env-${package_name}"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-build-env"
     IMAGE_BASE_TAG="${host_suite}-${host_arch}"
@@ -55,10 +56,7 @@ fn_docker_plugin_container_vars() {
 }
 
 fn_docker_plugin_container_conf() {
-    APT_INSTALL_REQ=""
-    APT_INSTALL_EXTRA=""
-    # fn_install_apt_req
-    debug "fn_docker_plugin_container_conf from plugin_build_debian_package not used yet"
+    debug "fn_docker_plugin_container_conf empty"
 }
 
 fn_build_package() {

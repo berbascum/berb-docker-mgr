@@ -87,7 +87,7 @@ fn_kernel_config_droidian() {
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
-    # Temporary disabled 2024-05-17 ## fn_install_apt "${arr_pack_reqs[@]}"
+    # Temporary disabled 2024-05-17 ## fn_bdm_apt_upgr_install_pks "${arr_pack_reqs[@]}"
 
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
@@ -113,7 +113,7 @@ fn_kernel_config_droidian() {
     	src_fullpath_file="/usr/share/linux-packaging-snippets/kernel-info.mk.example"
     	dst_fullpath_file="/buildd/sources/debian/${KERNEL_INFO_MK_FILENAME}"
     	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
-    	fn_bdm_docker_cmd_on_container
+    	fn_bdm_docker_cmd_inside_container
         ## Check if the kernel snippet was created
         [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
 

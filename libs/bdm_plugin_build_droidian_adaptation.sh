@@ -38,6 +38,7 @@
 
 fn_docker_plugin_container_vars() {
     ## Docker container vars
+    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-vars"
     CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG="${droidian_suite}-${host_arch}"
@@ -55,12 +56,7 @@ fn_docker_plugin_container_vars() {
 }
 
 fn_docker_plugin_container_conf() {
-    ## Install apt required packages on container
-    APT_INSTALL_REQ="droidian-apt-config droidian-archive-keyring"
-    APT_INSTALL_BASE="releng-tools"
-    #APT_INSTALL_EXTRA=""
-    fn_install_apt_req
-    fn_install_apt_base
+    debug "fn_docker_plugin_container_conf empty"
 }
 
 fn_build_package_on_container() {
