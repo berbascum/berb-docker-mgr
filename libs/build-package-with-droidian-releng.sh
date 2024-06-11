@@ -50,59 +50,6 @@ fn_workdir_status_check() {
     [ -n "$(git status | grep "staged")" ] && abort "The git workdir is not clean!"
 }
 
-fn_update_main_src_file_version_var() {
-    ## Update the TOOL_VERSION value on the main source file with the last tag version
-    tag_version=$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')
-OBTENIR num versio var TOOL_VERSION
-    if [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
-	tool_vers_var_name="TOOL_VERSION"
-    elif [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
-        tool_vers_var_name="#TOOL_VERSION"
-    else
-        tool_vers_var_name=""
-    fi
-    if [ -n "${tool_vers_var_name}" ]; then
-	tool_vers_var_version=$(cat 
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
-
-        info "Creating tag \"${last_commit_tag}\" on the last commit..."
-	git tag "${last_commit_tag}"
-}
-
-fn_set_last_tag() {
-    ## Check if the has commit has a tag
-    last_commit_tag="$(git tag --contains "HEAD")"
-    if [ -z "${last_commit_tag}" ]; then
-        clear && info "The last commit has not assigned a tag and is required"
-        last_tag=$(git log --decorate | grep 'tag:' \
-	    | head -n 1 | awk '{print $NF}' | tr -d ')')
-        if [ -n "${last_tag}" ]; then
-	    last_commit_tagged=$(git log --decorate  --abbrev-commit \
-	       | grep 'tag:' | head -n 1 | awk '{print $2}') \
-            commit_old_count=$(git rev-list --count HEAD ^"${last_commit_tagged}") \
-            info "Last tag \"${last_tag}\" and it's \"${commit_old_count}\" commits old"
-	else
-            info "No git tags found!"
-            ask "Enter a tag name in \"<tag_prefix>/<version>\" format or empty to cancel: "
-            [ -z "${answer}" ] && abort "Canceled by user!"
-            input_tag_is_valid=$(echo "${answer}" | grep "\/")
-            [ -z "${input_tag_is_valid}" ] && error "The typed tag has not a valid format!"
-            last_commit_tag="${answer}"
-	fi
-    fi
-    fn_update_main_src_file_version_var
-}
-
-fn_get_package_info() {
-    ## Get the package version and channel distribution from the last commit tag (mandatory)
-    package_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
-    package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
-    [ -z "${package_dist_channel}" ] && package_dist_channel="${package_dist_channel_tag}"
-    [ -z "${package_version}" ] && package_version="${package_version_tag}"
-    info "package_dist_channel = ${package_dist_channel}"
-    info "package_version = ${package_version}"
-}
-
 fn_releng_changelog_inject_vars() {
     ## Patch starting_version on releng-build-changelog with the last tag value
     sed -i \
@@ -135,12 +82,11 @@ fn_config_global
 ## Check the git workdir status and abort if not clean
 fn_workdir_status_check
 ## Check if the last commit has a tag
-fn_set_last_tag
+#fn_set_last_tag
 ## Get package info
-fn_get_package_info
-## Patch releng-build-changelog to set the package version and channel from last tag values	
-fn_releng_changelog_inject_vars
+## Patch releng-build-changelog to set the package version and channel from last tag values
+# fn_releng_changelog_inject_vars
 ## Call releng-build-package
 fn_build_package
 ## Restore releng-build-changelog vars previously patched
-fn_releng_changelog_restore_vars
+# fn_releng_changelog_restore_vars
