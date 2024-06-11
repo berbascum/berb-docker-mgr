@@ -130,15 +130,6 @@ fn_bdm_docker_main_menu() {
 	"command inside container" \
 	"commit container" \
     )
-<< "DEFINED_IN_PLUGINS"
-    ## Docker constants
-    CONTAINER_BASE_NAME="droidian-build-env-${package_name}"
-    IMAGE_BASE_NAME='quay.io/droidian/build-essential'
-    IMAGE_BASE_TAG="${droidian_suite}-${host_arch}"
-    CONTAINER_COMMITED_NAME="droidian-berb-build-env-${package_name}"
-    IMAGE_COMMIT_NAME='berb/build-essential'
-    IMAGE_COMMIT_TAG="${droidian_suite}-${host_arch}"
-DEFINED_IN_PLUGINS
 }
 
 fn_bdm_docker_container_config() {
@@ -421,48 +412,6 @@ fn_print_vars() {
     read -p "Continue..."
 } 
 
-fn_action_prompt() {
-## Function to get a action
-    INFO "Action is required:"
-    INFO "  1 - Create container            2 - Remove container"
-    info "  3 - Start container             4 - Stop container"
-    info "  5 - Commit container"
-    info "  7 - Shell to container          8 - Command to container"
-    INFO " 09 - Config Droidian kernel     10 - Build kernel on container"
-    info " 11 - Config package             12 - Build package on container"
-    info " 13 - Config adaptation          14 - Build adaptation on container"
-    #INFO " 6 - Install required apt pkgs on container"
-    #INFO  "20 - Backup kernel build output relevant files"
-
-<< "DISABLED_DEPRECATED"
-	9)
-	    ACTION="config-droidian-kernel"
-	    ;;
-	10)
-	    ACTION="build-kernel-on-container"
-	    ;;
-	11)
-	    ACTION="config-droidian-package"
-	    ;;
-	12)
-	    ACTION="build-package-on-container"
-	    ;;
-	13)
-	    ACTION="config-droidian-adaptation"
-	    ;;
-	14)
-	    ACTION="build-adaptation-on-container"
-	    ;;
-	20)
-	    ACTION="create-outputs-backup"
-	    ;;
-	*)
-	    echo "" && echo "Option not implemented!" && exit 1
-	    ;;
-	esac
-DISABLED_DEPRECATED
-}
-
 ############################
 ## Start script execution ##
 ############################
@@ -475,51 +424,6 @@ fn_bbgl_check_bash_ver
 fn_bdm_conf_file_install "${CONF_USER_FULLPATH}" "${CONF_USER_MAIN_FILENAME}"
 fn_bdm_conf_file_ask_empty_vars "CONF_USER_MAIN" "global-vars"
 fn_bdm_conf_file_load "CONF_USER_MAIN" "global-vars"
-
+## Load the default or tagged as script argument plugin
 fn_bdm_load_plugin
-
-exit
-
-fn_pkg_source_type_detection
-# Ho criden els plugins fn_bdm_docker_main_menu
-fn_action_prompt
-#fn_set_container_commit_if_exists
-
-#fn_print_vars
-#echo
-
-## Execute action on container name
-if [ "$ACTION" == "create" ]; then
-    fn_bdm_docker_create_container
-elif [ "$ACTION" == "remove" ]; then
-    fn_bdm_docker_remove_container
-elif [ "$ACTION" == "start" ]; then
-    fn_bdm_docker_start_container
-elif [ "$ACTION" == "stop" ]; then
-    fn_bdm_docker_stop_container
-elif [ "$ACTION" == "shell-to" ]; then
-    fn_bdm_docker_shell_to_container
-elif [ "$ACTION" == "command-to" ]; then
-   fn_bdm_docker_cmd_inside_container
-elif [ "$ACTION" == "install-apt-extra" ]; then
-    fn_bdm_docker_apt_install_pks  _extra
-elif [ "$ACTION" == "commit-container" ]; then
-    fn_bdm_docker_commit_container
-elif [ "$ACTION" == "config-droidian-kernel" ]; then
-    fn_kernel_config_droidian
-elif [ "$ACTION" == "build-kernel-on-container" ]; then
-    fn_build_kernel_on_container
-elif [ "$ACTION" == "config-droidian-package" ]; then
-    fn_config
-elif [ "$ACTION" == "build-package-on-container" ]; then
-    fn_build_package_on_container
-elif [ "$ACTION" == "config-droidian-adaptation" ]; then
-    fn_config
-elif [ "$ACTION" == "build-adaptation-on-container" ]; then
-    fn_build_adaptation_on_container
-elif [ "$ACTION" == "create-outputs-backup" ]; then
-    fn_create_outputs_backup
-else
-    echo "SCRIPT END: Action not implemented."
-fi
 
