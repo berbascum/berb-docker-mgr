@@ -36,7 +36,7 @@
 [ -z "$(echo "$*" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
 
 ## Include libs
-. /usr/lib/berb-bash-libs/bbl_git_lib.sh
+. /usr/lib/berb-bash-libs/bbl_git_lib_${BBL_GIT_VERSION}
 
 fn_get_package_info() {
     ## Get the package version and channel distribution from the last commit tag (mandatory)

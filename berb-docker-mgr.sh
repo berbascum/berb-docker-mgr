@@ -42,6 +42,9 @@ export TOOL_NAME="$(basename ${BASH_SOURCE[0]} | awk -F'.' '{print $1}')"
 #TOOL_VERSION="2.1.1.1"
 #TOOL_CHANNEL="sid"
 TESTED_BASH_VER='5.2.15'
+BBL_GIT_VERSION="1001"
+BBL_GENERAL_VERSION="1001"
+BBL_NET_VERSION="1001"
 
 #######################
 ## General functions ##
@@ -61,8 +64,8 @@ fn_bdm_global_conf() {
     CONF_USER_MAIN_FILENAME="bdm-user-main.conf"
     CONF_USER_MAIN_FULLPATH_FILENAME="${CONF_USER_FULLPATH}/${CONF_USER_MAIN_FILENAME}"
     ## Load libs
-    . /usr/lib/berb-bash-libs/bbl_general_lib.sh
-    . /usr/lib/berb-bash-libs/bbl_net_lib.sh
+    . /usr/lib/berb-bash-libs/bbl_general_lib_${BBL_GENERAL_VERSION}
+    . /usr/lib/berb-bash-libs/bbl_net_lib_${BBL_NET_VERSION}
     ## Config log
     fn_bbgl_config_log
     ## Config log level
