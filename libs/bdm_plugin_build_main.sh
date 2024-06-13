@@ -44,6 +44,7 @@ fn_get_package_info() {
     package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
     [ -z "${pkg_dist_channel}" ] && pkg_dist_channel="${pkg_dist_channel_tag}"
     [ -z "${package_version}" ] && package_version="${package_version_tag}"
+    package_version_int=$(echo ${package_version} | sed s/"\."/""/g)
     info "pkg_dist_channel = ${pkg_dist_channel}"
     info "package_version = ${package_version}"
 }
@@ -89,12 +90,32 @@ fn_copy_files_to_pkg_dir() {
         while read dir; do
             [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
         done <${debian_package_dirs_file_relpath}
-        ## Copy the package files to the pkg rootfs dir
-        cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
-        cp -a libs/*  ${pkg_rootfs_dir}/usr/lib/${package_name}
-        cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
-        cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
+        ## Copy the main script if found to the pkg rootfs dir
+	[ -f "${package_name}.sh" ] \
+            & cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+        ## Copy the lib files if found to the pkg rootfs dir
+	if [ -d "libs" ]; then
+	    for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
+                lib_basename=$(echo "${lib}" | awk -F'.' '{print $1}')
+                cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename}"
+            done
+	fi
+        ## Copy the lib/modules files if found to the pkg rootfs dir
+	if [ -d "libs/modules" ]; then
+	    for lib__module in $(find ./libs/modules -maxdepth -name "*.sh"); do
+                lib_basename=$(echo "${lib}" | awk -F'.' '{print $1}')
+                cp -a "${lib}" \
+		    "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename}_${package_version_int}"
+            done
+	fi
+        ## Copy the conf files if found to the pkg rootfs dir
+        [ -d "conf" ] \
+	    && cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
+        ## Copy the conf template files if found to the pkg rootfs dir
+        [ -f "conf_templates" ] \
+	    && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
     fi
+    PAUSE "Pausa després de copiar arxius al pkg_rootfs"
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
