@@ -95,6 +95,8 @@ fn_plugin_sub_exec()  {
     fn_update_main_src_file_version_var
     ## Commit the prebuild changes
     fn_bblgit_changelog_commit
+    ## Create the tag from user input
+    fn_bblgit_create_tag
     ## Copy the package files to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
     ## Call build-package
