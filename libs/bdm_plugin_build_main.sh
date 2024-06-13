@@ -78,7 +78,9 @@ fn_update_main_src_file_version_var() {
 fn_copy_files_to_pkg_dir() {
     ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
     [ "${answer}" != "y" ] && debug "Copy to pkg_rootfs canceled by user!" && return
-    #
+    ## Get the upsetream name from debian/changelog
+    [ ! -f "debian/copyright" ] && error "debian/copyright file not found"
+    upstream_name="$(cat debian/copyright | grep "^Upstream-Name:" | awk -F': ' '{print $2}')"
     ## Create dirs on pkg rootfs dir
     debian_install_exist=$(find "./debian" -maxdepth 1 -name "*.install")
     [ -z "${debian_install_exist}" ] && error "No debian package install files found"
@@ -97,14 +99,14 @@ fn_copy_files_to_pkg_dir() {
         fi
     done
     ## Copy the main script if found to the pkg rootfs dir
-    [ -f "${package_name}.sh" ] && cp -av ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+    [ -f "${upstream_name}.sh" ] && cp -av ${upstream_name}.sh ${pkg_rootfs_dir}/usr/bin/${upstream_name}
     ## Copy the lib files if found to the pkg rootfs dir
     if [ -d "libs" ]; then
         IFS=$' \t\n'
         for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
             lib_basename=$(basename "${lib}")
             lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
-            cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename_noext}"
+            cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}"
         done
     fi
     #
@@ -116,13 +118,13 @@ fn_copy_files_to_pkg_dir() {
             lib_basename=$(basename "${lib_module}")
             lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
             cp -a "${lib_module}" \
-                "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename_noext}_${package_version_int}"
+                "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}_${package_version_int}"
         done
     fi
     ## Copy the conf files if found to the pkg rootfs dir
-    [ -d "conf" ] && cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
+    [ -d "conf" ] && cp -a conf/*  ${pkg_rootfs_dir}/etc/${upstream_name}
     ## Copy the conf template files if found to the pkg rootfs dir
-    [ -f "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
+    [ -f "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
