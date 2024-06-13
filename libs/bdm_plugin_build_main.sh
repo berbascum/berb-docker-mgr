@@ -61,7 +61,6 @@ fn_update_main_src_file_version_var() {
         tool_vers_var_name=""
     fi
     if [ -n "${tool_vers_var_name}" ]; then
-	    #tool_vers_var_version=$(cat )
         sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${package_version}\"/g" "${package_name}.sh"
     fi
     ## Update the TOOL:CHANNEL value on the main source file with the last tag version
@@ -73,49 +72,57 @@ fn_update_main_src_file_version_var() {
         tool_vers_var_name=""
     fi
     if [ -n "${tool_vers_var_name}" ]; then
-	    #tool_vers_var_version=$(cat )
         sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${pkg_dist_channel}\"/g" "${package_name}.sh"
     fi
 }
-
 fn_copy_files_to_pkg_dir() {
+    ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
+    [ "${answer}" != "y" ] && debug "Copy to pkg_rootfs canceled by user!" && return
+    #
     ## Create dirs on pkg rootfs dir
+    debian_install_exist=$(find "./debian" -maxdepth 1 -name "*.install")
+    [ -z "${debian_install_exist}" ] && error "No debian package install files found"
     info "Copying the package files to the pkg rootfs dir..."
-    debian_package_dirs_file_relpath="debian/${package_name}.dirs"
-    if [ ! -f "${debian_package_dirs_file_relpath}" ]; then
-	info "debian package dirs file not found, the copy to pkg_rootfs wil  be skipped!"
-    else
-	ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
-	[ "${answer}" != "y" ] && debug "Copy to pkg_rootfs anceled by user!" && return
-        while read dir; do
-            [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p -v ${pkg_rootfs_dir}${dir}
-        done <${debian_package_dirs_file_relpath}
-        ## Copy the main script if found to the pkg rootfs dir
-	[ -f "${package_name}.sh" ] \
-            & cp -a ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
-        ## Copy the lib files if found to the pkg rootfs dir
-	if [ -d "libs" ]; then
-	    for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
-                lib_basename=$(echo "${lib}" | awk -F'.' '{print $1}')
-                cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename}"
-            done
-	fi
-        ## Copy the lib/modules files if found to the pkg rootfs dir
-	if [ -d "libs/modules" ]; then
-	    for lib__module in $(find ./libs/modules -maxdepth -name "*.sh"); do
-                lib_basename=$(echo "${lib}" | awk -F'.' '{print $1}')
-                cp -a "${lib}" \
-		    "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename}_${package_version_int}"
-            done
-	fi
-        ## Copy the conf files if found to the pkg rootfs dir
-        [ -d "conf" ] \
-	    && cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
-        ## Copy the conf template files if found to the pkg rootfs dir
-        [ -f "conf_templates" ] \
-	    && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
+    ## Create pkg_rootfs dirs from debian packaging dirs files
+    IFS=$' \t\n'
+    for dirs_file in $(find ./debian -maxdepth 1 -name "*.dirs"); do
+	debug "\"${dirs_file}\" file found!"
+        dirs_basename=$(basename "${lib}")
+        dirs_basename_noext=$(echo "${dirs_basename}" | awk -F'.' '{print $1}')
+        if [ -f "${dirs_file}" ]; then 
+            while read dir; do
+	        debug "Creating \"${dir}\" dir..."
+                [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p ${pkg_rootfs_dir}${dir}
+            done <${dirs_file}
+        fi
+    done
+    ## Copy the main script if found to the pkg rootfs dir
+    [ -f "${package_name}.sh" ] && cp -av ${package_name}.sh ${pkg_rootfs_dir}/usr/bin/${package_name}
+    ## Copy the lib files if found to the pkg rootfs dir
+    if [ -d "libs" ]; then
+        IFS=$' \t\n'
+        for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
+            lib_basename=$(basename "${lib}")
+            lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
+            cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename_noext}"
+        done
     fi
-    PAUSE "Pausa després de copiar arxius al pkg_rootfs"
+    #
+    ## Copy the lib/modules files if found to the pkg rootfs dir
+    if [ -d "libs/modules" ]; then
+        #IFS=$' \t\n'
+        IFS=$' \t\n'
+        for lib_module in $(find ./libs/modules -name "*.sh"); do
+            lib_basename=$(basename "${lib_module}")
+            lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
+            cp -a "${lib_module}" \
+                "${pkg_rootfs_dir}/usr/lib/${package_name}/${lib_basename_noext}_${package_version_int}"
+        done
+    fi
+    ## Copy the conf files if found to the pkg rootfs dir
+    [ -d "conf" ] && cp -a conf/*  ${pkg_rootfs_dir}/etc/${package_name}
+    ## Copy the conf template files if found to the pkg rootfs dir
+    [ -f "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${package_name}
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
