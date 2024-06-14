@@ -124,7 +124,7 @@ fn_copy_files_to_pkg_dir() {
     ## Copy the conf files if found to the pkg rootfs dir
     [ -d "conf" ] && cp -a conf/*  ${pkg_rootfs_dir}/etc/${upstream_name}
     ## Copy the conf template files if found to the pkg rootfs dir
-    [ -f "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
+    [ -d "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
