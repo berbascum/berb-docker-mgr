@@ -84,6 +84,8 @@ fn_copy_files_to_pkg_dir() {
     ## Create dirs on pkg rootfs dir
     debian_install_exist=$(find "./debian" -maxdepth 1 -name "*.install")
     [ -z "${debian_install_exist}" ] && error "No debian package install files found"
+    ASK "Want to clean the pkg_rootfs content first? [ y/n ]: "
+    [ "${answer}" == "y" ] && rm -r -v ${pkg_rootfs_dir}/*
     info "Copying the package files to the pkg rootfs dir..."
     ## Create pkg_rootfs dirs from debian packaging dirs files
     IFS=$' \t\n'
