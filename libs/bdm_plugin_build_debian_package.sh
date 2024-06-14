@@ -85,6 +85,8 @@ fn_build_package_on_container() {
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
     fn_bblgit_workdir_status_check
+    ## Copy the package files to the pkg rootfs dir
+    fn_copy_files_to_pkg_dir
     ## Check if the last commit has a tag
     fn_bblgit_last_two_tags_check
     ## Get package info
@@ -97,8 +99,6 @@ fn_plugin_sub_exec()  {
     fn_bblgit_changelog_commit
     ## Create the tag from user input
     fn_bblgit_create_tag
-    ## Copy the package files to the pkg rootfs dir
-    fn_copy_files_to_pkg_dir
     ## Call build-package
     fn_build_package_on_container
     #fn_build_package

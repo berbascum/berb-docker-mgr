@@ -120,7 +120,9 @@ fn_build_package_on_container() {
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
     fn_bblgit_workdir_status_check
-
+    ## Copy the package files to the pkg rootfs dir
+       ## Designed for build_debian_package but may be usefull in future
+#       fn_copy_files_to_pkg_dir
     ## Check if the last commit has a tag
     fn_bblgit_last_two_tags_check
     ## Get package info
@@ -129,15 +131,11 @@ fn_plugin_sub_exec()  {
 #    fn_bblgit_changelog_build
     ## Update version and channel on the main src file
        ## Designed for build_debian_package but may be usefull in future
-       # fn_update_main_src_file_version_var
+#       fn_update_main_src_file_version_var
     ## Commit the prebuild changes
 #    fn_bblgit_changelog_commit
     ## Create the tag from user input
     fn_bblgit_create_tag
-
-    ## Copy the package files to the pkg rootfs dir
-       ## Designed for build_debian_package but may be usefull in future
-       # fn_copy_files_to_pkg_dir
     ## Call build-package
     fn_build_package_on_container
 }
