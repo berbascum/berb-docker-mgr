@@ -85,12 +85,14 @@ fn_build_package_on_container() {
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
     fn_bblgit_workdir_status_check
-    ## Copy the package files to the pkg rootfs dir
-    fn_copy_files_to_pkg_dir
+    ## Check origin status, an updated branch in origin is required
+    fn_bblgit_origin_status_ckeck
     ## Check if the last commit has a tag
     fn_bblgit_last_two_tags_check
     ## Get package info
     fn_get_package_info
+    ## Copy the package files to the pkg rootfs dir
+    fn_copy_files_to_pkg_dir
     ## Build the change log from the git history
     fn_bblgit_changelog_build
     ## Update version and channel on the main src file
