@@ -129,6 +129,8 @@ fn_plugin_sub_exec()  {
     ## Copy the package files to the pkg rootfs dir
        ## Designed for build_debian_package but may be usefull in future
 #       fn_copy_files_to_pkg_dir
+    ## Commit the updated $pkg_rootfs packacing dir
+##    fn_bblgit_commit_changes "${pkg_rootfs_dir}" "Update: pkg_rootfs_dir packaging dir contents"
     ## Build the change log from the git history
 #    fn_bblgit_changelog_build
     ## Update version and channel on the main src file
