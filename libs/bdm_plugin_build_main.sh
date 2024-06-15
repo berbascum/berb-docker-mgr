@@ -108,25 +108,25 @@ fn_copy_files_to_pkg_dir() {
         for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
             lib_basename=$(basename "${lib}")
             lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
-            cp -a "${lib}" "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}"
+            cp -av "${lib}" "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}"
         done
     fi
     #
     ## Copy the lib/modules files if found to the pkg rootfs dir
     if [ -d "libs/modules" ]; then
-        #IFS=$' \t\n'
         IFS=$' \t\n'
         for lib_module in $(find ./libs/modules -name "*.sh"); do
             lib_basename=$(basename "${lib_module}")
             lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
-            cp -a "${lib_module}" \
+            cp -av "${lib_module}" \
                 "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}_${package_version_int}"
         done
     fi
     ## Copy the conf files if found to the pkg rootfs dir
-    [ -d "conf" ] && cp -a conf/*  ${pkg_rootfs_dir}/etc/${upstream_name}
+    [ -d "conf" ] && cp -av conf/*  ${pkg_rootfs_dir}/etc/${upstream_name}
     ## Copy the conf template files if found to the pkg rootfs dir
-    [ -d "conf_templates" ] && cp -a conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
+    [ -d "conf_templates" ] && cp -av conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
+    PAUSE "Copy to pkg rootfs process finished. Press Intro to continue "
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
