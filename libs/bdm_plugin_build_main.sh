@@ -39,14 +39,15 @@
 . /usr/lib/berb-bash-libs/bbl_git_lib_${BBL_GIT_VERSION}
 
 fn_get_package_info() {
-    ## Get the package version and channel distribution from the last commit tag (mandatory)
-    pkg_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
-    package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
-    [ -z "${pkg_dist_channel}" ] && pkg_dist_channel="${pkg_dist_channel_tag}"
-    [ -z "${package_version}" ] && package_version="${package_version_tag}"
-    package_version_int=$(echo ${package_version} | sed s/"\."/""/g)
-    info "pkg_dist_channel = ${pkg_dist_channel}"
-    info "package_version = ${package_version}"
+    debug "TODO: fn_get_package_info from plugin_build_main"
+    ## Get the package version and release from the last commit tag (mandatory)
+    #pkg_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
+    #package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
+    #[ -z "${pkg_dist_channel}" ] && pkg_dist_channel="${pkg_dist_channel_tag}"
+    #[ -z "${package_version}" ] && package_version="${package_version_tag}"
+    #package_version_int=$(echo ${tag_version} | sed s/"\."/""/g | sed s/"-"/""/g)
+    #info "pkg_dist_channel = ${pkg_dist_channel}"
+    #info "package_version = ${package_version}"
 }
 
 fn_update_main_src_file_version_var() {
@@ -61,7 +62,7 @@ fn_update_main_src_file_version_var() {
         tool_vers_var_name=""
     fi
     if [ -n "${tool_vers_var_name}" ]; then
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${package_version}\"/g" "${package_name}.sh"
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
     fi
     ## Update the TOOL:CHANNEL value on the main source file with the last tag version
     if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_CHANNEL=\"") ]; then
@@ -72,7 +73,7 @@ fn_update_main_src_file_version_var() {
         tool_vers_var_name=""
     fi
     if [ -n "${tool_vers_var_name}" ]; then
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${pkg_dist_channel}\"/g" "${package_name}.sh"
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${git_tag_release}\"/g" "${package_name}.sh"
     fi
 }
 fn_copy_files_to_pkg_dir() {
@@ -119,7 +120,7 @@ fn_copy_files_to_pkg_dir() {
             lib_basename=$(basename "${lib_module}")
             lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
             cp -av "${lib_module}" \
-                "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}_${package_version_int}"
+                "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}_${tag_version_int}"
         done
     fi
     ## Copy the conf files if found to the pkg rootfs dir
