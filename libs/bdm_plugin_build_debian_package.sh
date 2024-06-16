@@ -98,7 +98,7 @@ fn_plugin_sub_exec()  {
     ## Build the change log from the git history
     fn_bblgit_changelog_build
     ## Commit the updated files before building
-    fn_bblgit_commit_changes "Build release: pre-configs before building new version ${tag_version}"
+    fn_bblgit_commit_changes "Build release: pre-configs before building new version ${tag_version}-${tag_release}"
     ## Create the tag from user input
     fn_bblgit_create_tag
     ## Check origin status, an updated branch in origin is required
