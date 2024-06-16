@@ -143,7 +143,7 @@ fn_copy_files_to_pkg_dir() {
         fi
     done
     ## Copy the main script if found to the pkg rootfs dir
-    [ -f "${upstream_name}.sh" ] && cp -av ${upstream_name}.sh ${pkg_rootfs_dir}/usr/bin/${upstream_name}
+    [ -f "${upstream_name}"*.sh ] && cp -av "${upstream_name}"*.sh "${pkg_rootfs_dir}/usr/bin/${upstream_name}"
     ## Copy the lib files if found to the pkg rootfs dir
     if [ -d "libs" ]; then
         IFS=$' \t\n'
