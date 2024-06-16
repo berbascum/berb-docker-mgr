@@ -1,8 +1,7 @@
 last_changes
 commit_msg
-sparse
-pkg_rootfs
 build-debian-package.sh
+out-berb-docker-mgr
 
 ## Debhelper outputs
 debian/.debhelper/

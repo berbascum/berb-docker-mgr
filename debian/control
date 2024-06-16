@@ -11,4 +11,7 @@ Architecture: all
 Depends: ${misc:Depends},
          docker.io,
 	 wget,
+         bbl-net-lib (>= 1.0.0.1);
+         bbl-general-lib (>= 1.0.0.1);
+         bbl-git-lib (>= 1.1.0.1);
 Description: Bash script to manage docker containers with multiple plugins
