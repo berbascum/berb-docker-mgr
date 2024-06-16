@@ -43,12 +43,13 @@ fn_header_info() {
     BIN_TYPE="bin"
     BIN_SRC_TYPE="bash"
     BIN_SRC_EXT="sh"
-    BIN_NAME="berb-apt-mgr"
+    BIN_NAME="berb-docker-mgr"
     TOOL_VERSION="2.1.1.1"
     TOOL_RELEASE="sid"
     URGENCY='optional'
     TESTED_BASH_VER='5.2.15'
 }
+TOOL_NAME="berb-docker-mgr"
 BBL_GIT_VERSION="1001"
 BBL_GENERAL_VERSION="1001"
 BBL_NET_VERSION="1001"
