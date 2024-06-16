@@ -51,18 +51,58 @@ fn_get_package_info() {
 }
 
 fn_update_main_src_file_version_var() {
-    ## Update the TOOL_VERSION value on the main source file with the last tag version
-    ## Firts, if not exist a script ${package_name}.sh exit the function
-    [ ! -f "${package_name}.sh" ] && return
-    if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_VERSION=\"") ]; then
-        tool_vers_var_name="#TOOL_VERSION"
-    elif [ -n $(cat "${package_name}.sh" | grep "^TOOL_VERSION=\"") ]; then
-	tool_vers_var_name="TOOL_VERSION"
-    else
-        tool_vers_var_name=""
+    ## Update version info in the main bin src file' HEADER section
+    ## First, search for a main src file
+    arr_search_strings=( "bin-main" "bin-lib" )
+    arr_files_found=()
+    for search_str in ${arr_search_strings}; do
+        file_found=$(find . -name "*${search_str}.*")
+        if [ -n "${file_found}" ]; then
+            arr_files_found+=( "${file_found}" )
+	fi
+    done
+    debug "\"${#arr_files_found[@]}\" files \"$search_str\" were found"
+    ## Exit from funtion if no main source files found
+    if [ "${#arr_files_found[@]}" -eq "0" ]; then
+	info "No main source files found. Skipping..."
+	return
+    ## Exit from funtion if there is many main source files since is not implemented yet
+    elif [ "${#arr_files_found[@]}" -gt "1" ]; then
+	info "Many main src files feature not implemented yet!"
+	return
+    elif [ "${#arr_files_found[@]}" -eq "1" ]; then
+        main_src_relpath_file="${arr_files_found[0]}"
+	main_src_file="$(basename "${main_src_relpath_file}")"
+        file="${main_src_file}"
+	debug "File \"${file}\" found"
     fi
+    ## Get the main src's header section vars and put in arr_vars_found
+    section="HEADER_SECTION" \
+    	&& fn_bbgl_parse_file_section "${file}" "${section}" "search_varnames" "all"
+    debug "${section}: arr_vars_found = $(printf '%s\n' && printf '%s\n' ${arr_vars_found[@]})"
+    ## If no vars found in HEADER section, exit the function
+    [ "${#arr_vars_found[@]}" -eq "0" ] \
+	&& debug "No vars found on ${main_src_file}'s HEADER section" && return
+    ## Search for a BIN_TYPE var in HEADER section
+    for header_var_def in ${arr_vars_found[@]}; do
+        src_bin_type=$(echo ${header_var_def} | grep "^    BIN_TYPE=\"" | awk -F'"' '{print $2}')
+	[ -n "${src_bin_type}" ] && break
+    done
+    debug "src_bin_type = ${src_bin_type}"
+    ## If no BIN_TYPE var found in HEADER section, exit the function
+    [ -z "${src_bin_type}" ] \
+	&& debug "No BIN_TYPE var found on ${main_src_file}'s HEADER section" && return
+    ## Update the needed vars in HEADER section if found
+    sed -i "s/^    TOOL_VERSION=\".*/    TOOL_VERSION=\"${tag_version}\"/g" "${main_src_file}"
+    sed -i "s/^    TOOL_RELEASE=\".*/    TOOL_RELEASE=\"${tag_release}\"/g" "${main_src_file}"
+
+    ## TODO: AQUI libs/modules
+    package_lib_name=$(echo "${package_name}" | sed 's/-/_/g')
+
+<< "DISABLED"    
     if [ -n "${tool_vers_var_name}" ]; then
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" "${package_name}.sh"
+        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" \
+	    "${package_name}.sh"
     fi
     ## Update the TOOL:CHANNEL value on the main source file with the last tag version
     if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_CHANNEL=\"") ]; then
@@ -75,6 +115,7 @@ fn_update_main_src_file_version_var() {
     if [ -n "${tool_vers_var_name}" ]; then
         sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${git_tag_release}\"/g" "${package_name}.sh"
     fi
+DISABLED
 }
 fn_copy_files_to_pkg_dir() {
     ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
