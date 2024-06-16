@@ -93,16 +93,12 @@ fn_plugin_sub_exec()  {
     fn_get_package_info
     ## Copy the package files to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
-    ## Commit the updated $pkg_rootfs packacing dir
-    fn_bblgit_commit_changes "${pkg_rootfs_dir}" "Update pkg_rootfs_dir packaging dir contents"
     ## Update version and channel on the main src file
     fn_update_main_src_file_version_var
-    ## Commit the update new version changes
-    fn_bblgit_commit_changes "${main_src_relpath_file}" "Update new version num and release"
     ## Build the change log from the git history
     fn_bblgit_changelog_build
-    ## Commit the updated changelog
-    fn_bblgit_commit_changes "debian/changelog" "Update debian changelog"
+    ## Commit the updated files before building
+    fn_bblgit_commit_changes "Build release: pre-configs before building new version ${tag_version}"
     ## Create the tag from user input
     fn_bblgit_create_tag
     ## Check origin status, an updated branch in origin is required
