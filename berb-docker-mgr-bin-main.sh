@@ -44,7 +44,7 @@ fn_header_info() {
     BIN_SRC_TYPE="bash"
     BIN_SRC_EXT="sh"
     BIN_NAME="berb-docker-mgr"
-    TOOL_VERSION="2.2.0.1"
+    TOOL_VERSION="2.2.1.1"
     TOOL_RELEASE="testing"
     URGENCY='optional'
     TESTED_BASH_VER='5.2.15'

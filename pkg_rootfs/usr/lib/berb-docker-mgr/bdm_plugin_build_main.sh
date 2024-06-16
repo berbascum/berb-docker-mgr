@@ -122,8 +122,8 @@ fn_copy_files_to_pkg_dir() {
         IFS=$' \t\n'
         for lib in $(find ./libs -maxdepth 1 -name "*.sh"); do
             lib_basename=$(basename "${lib}")
-            lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
-            cp -av "${lib}" "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}"
+            #lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
+            cp -av "${lib}" "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename}"
         done
     fi
     #

@@ -1,6 +1,8 @@
-berb-docker-mgr (2.2.0.1+git20240616202409.0e37e9f.testing) testing; urgency=medium
+berb-docker-mgr (2.2.1.1+git20240616204628.a683f89.testing) testing; urgency=medium
 
   [berbascum]
+  * (a683f89) Update: the normal libs (no libs/modules) copy in fn_copy_files_to_pkg_dir from plugin_build_main will keep the file extension 
+  * (73b158e) Build release: pre-configs before building new version 2.2.0.1-testing 
   * (0e37e9f) Update: bbl_general_lib version dep to 1.1.0.1 in debian/control and main script 
   * (63d64e1) Update: final commit message in plugin_build_debian_packaging 
   * (211459a) Update: bbl libs deps were updated in debian/control and main script 
@@ -70,29 +72,5 @@ berb-docker-mgr (2.2.0.1+git20240616202409.0e37e9f.testing) testing; urgency=med
   * (f87563b) Update: add default values in main user conf template 
   * (7423e72) Improve: the user conf related functions were globalized 
   * (fa95ff7) Fix: plugin_default has been adapted to the last main tool version 
-  * (5103b06) Update: doc/image_creation 
-  * (93cb833) Update: debian/changelog, and version/dist_channel in main source file 
-  * (f820cd0) Fix: script to build a debian_package on container path was fixed 
-  * (ae39694) Update: add build-debian-package.sh exclusion to .gitignore 
-  * (3445ed6) Update: the build_debian_package command on container now is a shell script 
-  * (cdb30d3) Fix: docker container creation debian_package filter 
-  * (d9e95ee) Add: docker container paths configuration in build_debian_package file 
-  * (bf911c8) Change: docker container name in plugin_default 
-  * (7c62a96) Enable: build_debian_package build on container command 
-  * (65c0da0) Fix: build_main copy package files 
-  * (3a43ffb) Update: debian format from git to native 
-  * (8540f4b) Update: .gitignore 
-  * (5ec5e92) New: build_debian_package commands were implemented but not tested 
-  * (b172b77) Remove: cp_source_files_to_pkg_rootfs.sh since was moved to a build_main function 
-  * (edd39d5) Enable: git workdir status ckeck that was disabled for testing 
-  * (60fa67a) Update: main src version updater function also edit the TOOL_CHANNEL var 
-  * (59a4ca4) Fix: the version on the main src file is not being updated 
-  * (95d81cf) Add: pkg_rootfs exclusion on .gitignore 
-  * (d4bd170) Fix: errors creating pkg rootfs dirs 
-  * (c1151ef) Move: the function in cp_source_files_to_pkg_rootfs.sh to plugin_build_main 
-  * (7bb8d93) Add: debian/changelog file 
-  * (68ac8b0) Remove: get_last_tag function from plugin_build_main since was imported from bblgit 
-              Update: some adaptations to be working with the git preparation functions was implemented
-  * (7487dfa) Rename: get_last_tag function since will be moved to berb-bash-libs_bblgit 
 
- -- berbascum <berbascum@ticv.cat>  Sun, 16 Jun 2024 20:24:09 +0200
+ -- berbascum <berbascum@ticv.cat>  Sun, 16 Jun 2024 20:46:28 +0200
