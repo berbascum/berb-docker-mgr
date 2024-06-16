@@ -98,7 +98,7 @@ fn_plugin_sub_exec()  {
     ## Update version and channel on the main src file
     fn_update_main_src_file_version_var
     ## Commit the update new version changes
-    fn_bblgit_commit_changes "${main_src_file}" "Update new version num and release"
+    fn_bblgit_commit_changes "${main_src_relpath_file}" "Update new version num and release"
     ## Build the change log from the git history
     fn_bblgit_changelog_build
     ## Commit the updated changelog

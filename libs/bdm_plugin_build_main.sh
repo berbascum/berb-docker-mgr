@@ -53,15 +53,9 @@ fn_get_package_info() {
 fn_update_main_src_file_version_var() {
     ## Update version info in the main bin src file' HEADER section
     ## First, search for a main src file
-    arr_search_strings=( "bin-main" "bin-lib" )
-    arr_files_found=()
-    for search_str in ${arr_search_strings}; do
-        file_found=$(find . -name "*${search_str}.*")
-        if [ -n "${file_found}" ]; then
-            arr_files_found+=( "${file_found}" )
-	fi
-    done
-    debug "\"${#arr_files_found[@]}\" files \"$search_str\" were found"
+    arr_files_found=( $(find ./  -type f \( -name "*bin-main.*" -o -name "*lib-main.*" \)) )
+    debug " echo arr_files_found = ${arr_files_found[@]}"
+    debug "\"${#arr_files_found[@]}\" files were found"
     ## Exit from funtion if no main source files found
     if [ "${#arr_files_found[@]}" -eq "0" ]; then
 	info "No main source files found. Skipping..."
@@ -73,12 +67,11 @@ fn_update_main_src_file_version_var() {
     elif [ "${#arr_files_found[@]}" -eq "1" ]; then
         main_src_relpath_file="${arr_files_found[0]}"
 	main_src_file="$(basename "${main_src_relpath_file}")"
-        file="${main_src_file}"
-	debug "File \"${file}\" found"
+	debug "File main_src_relpath_file = \"${main_src_relpath_file}\" found"
     fi
     ## Get the main src's header section vars and put in arr_vars_found
     section="HEADER_SECTION" \
-    	&& fn_bbgl_parse_file_section "${file}" "${section}" "search_varnames" "all"
+    	&& fn_bbgl_parse_file_section "${main_src_relpath_file}" "${section}" "search_varnames" "all"
     debug "${section}: arr_vars_found = $(printf '%s\n' && printf '%s\n' ${arr_vars_found[@]})"
     ## If no vars found in HEADER section, exit the function
     [ "${#arr_vars_found[@]}" -eq "0" ] \
@@ -91,32 +84,12 @@ fn_update_main_src_file_version_var() {
     debug "src_bin_type = ${src_bin_type}"
     ## If no BIN_TYPE var found in HEADER section, exit the function
     [ -z "${src_bin_type}" ] \
-	&& debug "No BIN_TYPE var found on ${main_src_file}'s HEADER section" && return
+	&& debug "No BIN_TYPE var found on ${main_src_relpath_file}'s HEADER section" && return
     ## Update the needed vars in HEADER section if found
-    sed -i "s/^    TOOL_VERSION=\".*/    TOOL_VERSION=\"${tag_version}\"/g" "${main_src_file}"
-    sed -i "s/^    TOOL_RELEASE=\".*/    TOOL_RELEASE=\"${tag_release}\"/g" "${main_src_file}"
-
-    ## TODO: AQUI libs/modules
-    package_lib_name=$(echo "${package_name}" | sed 's/-/_/g')
-
-<< "DISABLED"    
-    if [ -n "${tool_vers_var_name}" ]; then
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${tag_version}\"/g" \
-	    "${package_name}.sh"
-    fi
-    ## Update the TOOL:CHANNEL value on the main source file with the last tag version
-    if [ -n $(cat "${package_name}.sh" | grep "^#TOOL_CHANNEL=\"") ]; then
-        tool_vers_var_name="#TOOL_CHANNEL"
-    elif [ -n $(cat "${package_name}.sh" | grep "^TOOL_CHANNEL=\"") ]; then
-	tool_vers_var_name="TOOL_CHANNEL"
-    else
-        tool_vers_var_name=""
-    fi
-    if [ -n "${tool_vers_var_name}" ]; then
-        sed -i "s/^${tool_vers_var_name}=\".*/${tool_vers_var_name}=\"${git_tag_release}\"/g" "${package_name}.sh"
-    fi
-DISABLED
+    sed -i "s/^    TOOL_VERSION=\".*/    TOOL_VERSION=\"${tag_version}\"/g" "${main_src_relpath_file}"
+    sed -i "s/^    TOOL_RELEASE=\".*/    TOOL_RELEASE=\"${tag_release}\"/g" "${main_src_relpath_file}"
 }
+
 fn_copy_files_to_pkg_dir() {
     ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
     [ "${answer}" != "y" ] && debug "Copy to pkg_rootfs canceled by user!" && return
@@ -159,7 +132,8 @@ fn_copy_files_to_pkg_dir() {
         IFS=$' \t\n'
         for lib_module in $(find ./libs/modules -name "*.sh"); do
             lib_basename=$(basename "${lib_module}")
-            lib_basename_noext=$(echo "${lib_basename}" | awk -F'.' '{print $1}')
+            lib_basename_noext=$(echo "${lib_basename}" \
+		| awk -F'.' '{print $1}' | awk -F'-' '{print $1}')
             cp -av "${lib_module}" \
                 "${pkg_rootfs_dir}/usr/lib/${upstream_name}/${lib_basename_noext}_${tag_version_int}"
         done
