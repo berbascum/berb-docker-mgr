@@ -1,6 +1,77 @@
-berb-docker-mgr (2.1.1.1+git20240609114335.f820cd0.sid) sid; urgency=medium
+berb-docker-mgr (2.2.0.1+git20240616202409.0e37e9f.testing) testing; urgency=medium
 
   [berbascum]
+  * (0e37e9f) Update: bbl_general_lib version dep to 1.1.0.1 in debian/control and main script 
+  * (63d64e1) Update: final commit message in plugin_build_debian_packaging 
+  * (211459a) Update: bbl libs deps were updated in debian/control and main script 
+  * (cf686e5) Update: the commit calls from plugin_build_debian_packaging were merged one only finel commit 
+  * (ea0a32c) Update: fn_update_main_src_file_version_var now supports the scripts in libs/modules dir 
+  * (0cbc9ad) Fix: binary copys to pkg_rootfs_dir feature from plugin_build_main was fixed 
+  * (2919b9e) Fix: some main script HEADER vars 
+  * (2208ae8) Rename: main src was renamed and updated with some header extra info to use with bbl_generan_parse_header_section feature 
+  * (159e477) Refactor: fn_update_main_src_file_version_var from plugin_build_main was fully rewrited to be more scalable using the bbl_parse_header_section feature, and the bash binaris are implemented but for libs/modules not yet 
+  * (5b6f18d) Fix: the file varname from the calls to fn_bblgit_commit_changes was updated to main_src_file 
+  * (88201e4) Update: some adaptations to use the new functions in the bbl_git_lib v1.1.0.1 
+  * (40475e1) Update: the related debian packaging build sub-plugins were updated to use the new commit fn in bbl_git_lib 
+  * (a9e9eac) Fix: a filter in fn_update_main_src_file_version_var from plugin_build_main 
+  * (cf98165) Enable: some temporal extra debugging in plugin_build_main 
+  * (da44d59) Update: add call to bblgit_origin_status_ckeck on droidian_adaptation and debian_packacing build plugins 
+  * (6d57ec4) New: user will be asked for pkg_rootfs content deletion befor copyyng the files 
+  * (f41779b) Update: change order of copy package files to pkg_rootfs to the begin on build debian-package and droidian-adapt plugins 
+  * (0b19c13) Fix copy conf_templates in plugin_build_main 
+  * (ffd4d4d) Add call to fn_bblgit_create_tag in plugin_build_debian_packaging 
+  * (cd67345) New vars BBL VERSION to configure a bbl libs required version 
+  * (a58e1a5) New var upstream_name to replace the package_name use in some scenarios 
+  * (8c97902) Rewrite fn_copy_files_to_pkg_dir in plugin_build_main to correct errors 
+  * (49e2ae1) Update: git submodules support was added to the copy_to_pkg_rootfs feature 
+  * (fd6bdb3) Update: enable the releng launches script remove in plugin_build_droidian_adaptation 
+  * (c81e91c) Clean: obsolete code that was moved to the plugins, in berb-docker-mgr.sh 
+  * (18eab2e) Update: the releng caller script so now the releng arch can be reconfigured dinamically 
+  * (88305ee) New: in plugin_build_droidian_adaptation, the releng arch now is dinamicaly configured 
+  * (3e087ae) Fix: docker image name on plugin_build_debian_package 
+  * (689f416) Update: doc README.md with some initial tips 
+  * (06f54fb) Improve: docker multiarch enable feature installing some packages on the container 
+  * (7a7a651) New: vars in bdm-user-main.conf to set the arch on different contexts 
+  * (6f53923) New: vars in bdm-user-droidian.conf to set the arch on different contexts 
+  * (3f393de) Fix: docker image name on plugin_default 
+  * (f9401a3) Fix: Change droidian releng build output files ownership from root to current user 
+              Update: Add call to fn_bblgit_create_tag
+  * (df4b171) Remove --rm flag from docker multiarch/qemu-user-static command in berb-docker-mgr.ah 
+  * (a6eedd0) Fix: some bugs in systemd_wanted .links and .dirs configuration were fixed 
+  * (65688b4) Update: fn_build_package_on_container from plugin_build_droidian_adaptation 
+  * (df9c449) Update: builder script that finnaly calls releng, used by plugin_build_droidian_adaptation 
+  * (8d1de8f) Improve: call to add systemd services was moved to the build_on_container function for build_debian_package and build_droidian_adaptation plugins 
+  * (1fa35ef) Update: fn_plugin_build_main_pkg_rootfs_systemd_links_add to also add wanted services to .dirs file 
+  * (a539ae4) New: fn_plugin_build_main_pkg_rootfs_systemd_links_add 
+  * (58b9445) Update: docker paths in plugin_build_droidian_adaptation were implemented 
+  * (09d590f) Rewrite: apt_install_pkgs_inside_container feature was fully rewrited, and executed only after container creation if interactively accepted 
+  * (ea863ce) Fix: fn_plugin_build_main_docker_container_reqs was not calling the docker actions correctly 
+  * (8f455ae) Fix: fn_action prefix in fn_bdm_docker_menu_fzf 
+  * (b4037a7) Fix: droidian_adaptation filter in fn_bdm_docker_create_container 
+  * (251da0c) New: function to create and start the required docker container when the build plugin is used 
+  * (87e123c) Improve: some main script functions were renamed to best identification 
+  * (4a9935b) Improve: docker container config related var values in plugin_build_droidian_adaptation 
+  * (2513d2c) Improve: image commit name value in plugin_build_debian_package 
+  * (d490b11) Update: apt install requirements in plugin_build_droidian_adaptation 
+  * (3796e02) Fix: filter to check that plugin lib exist in droidian_adaptation pkg was fixed 
+  * (2a8dc55) New: in plugin_build_main package detection, build_froidian_main is loaded when sparse dir is found 
+              Rename: bdm_plugin_build_droidian_adapt to bdm_plugin_build_droidian_adaptation
+  * (3318e43) Update: plugin_build_droidian_package, add apt install extra empty var for future use 
+  * (fafea16) Improve: global-vars section in bdm-user-droidian.conf was renamed to device-vars 
+  * (99192ce) New: sub-plugin build_droidian_main will load droidian plugins shared config 
+  * (1d5abdf) Update: on plugin_build_droidian_adapt, now is building changelog and checking git tags 
+  * (00c14ff) Update: some improvement on the config files parsing 
+  * (0dcee18) Update: some adaptations on plugin_build_debian_package 
+  * (753dd39) New: on plugin_build_main a created and started container with defined name is required 
+  * (8acbbdb) Remove: obsolete files 
+  * (fbfeafb) Improve: cheks before copy dirs to pkg_rootfs dir and update_tool_ver on main_src file 
+  * (4834853) New: an user config file for plugin_build_droidian have been created 
+  * (201188a) Update: plugin_build_debian_package, container base name adds the package_name str 
+  * (f87563b) Update: add default values in main user conf template 
+  * (7423e72) Improve: the user conf related functions were globalized 
+  * (fa95ff7) Fix: plugin_default has been adapted to the last main tool version 
+  * (5103b06) Update: doc/image_creation 
+  * (93cb833) Update: debian/changelog, and version/dist_channel in main source file 
   * (f820cd0) Fix: script to build a debian_package on container path was fixed 
   * (ae39694) Update: add build-debian-package.sh exclusion to .gitignore 
   * (3445ed6) Update: the build_debian_package command on container now is a shell script 
@@ -23,12 +94,5 @@ berb-docker-mgr (2.1.1.1+git20240609114335.f820cd0.sid) sid; urgency=medium
   * (68ac8b0) Remove: get_last_tag function from plugin_build_main since was imported from bblgit 
               Update: some adaptations to be working with the git preparation functions was implemented
   * (7487dfa) Rename: get_last_tag function since will be moved to berb-bash-libs_bblgit 
-  * (a8cd3f5) Update: some adaptations to use the new bblgit changelog bash generator 
-  * (b7f0611) Update: getting tag and package info is working on build_debian_package plugin 
-  * (f4e0a53) Upgrade: some improvements on the get_last_git_tag feature 
-  * (2109b49) Upgrade: improved plugin selection 
-  * (7bedf6a) Rename: build debian package plugin file due to development requirements 
-  * (b9b7f58) Rename: build droidian adaptation plugin file due to development requirements 
-  * (105708d) Fix: typo on bdm_plugin_build_main.sh 
 
- -- berbascum <berbascum@ticv.cat>  Sun, 09 Jun 2024 11:43:35 +0200
+ -- berbascum <berbascum@ticv.cat>  Sun, 16 Jun 2024 20:24:09 +0200
