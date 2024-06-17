@@ -34,25 +34,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
 
 ############################
 ## Kernel build functions ##
 ############################
-
-
-    chmod +x /buildd/sources/debian/rules
-    cd /buildd/sources
-
-fn_docker_config_kernel_source() {
-    APT_INSTALL_EXTRA=" \
-        bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
-        linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64 \
-        linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps \
-        mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2 \
-        gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android \
-        libgcc-4.9-dev-aarch64-linux-android-cross \
-        binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu"
-       #clang-android-6.0-4691093 clang-android-10.0-r370808 \
+fn_docker_plugin_container_vars() {
+    ## Docker container vars
+    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-kernel-vars"
+    CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
+    IMAGE_BASE_NAME='quay.io/droidian/build-essential'
+    IMAGE_BASE_TAG="${droidian_host_suite}-${droidian_host_arch}"
+    CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
+    IMAGE_COMMIT_NAME='droidian/build-essential-upg'
+    IMAGE_COMMIT_TAG="${droidian_host_suite}-${droidian_host_arch}"
+    ## Paths configuration
     # Set SOURCES_FULLPATH to parent kernel dir
     SOURCES_FULLPATH="$(dirname ${START_DIR})"
     ## get kernel info
@@ -64,7 +60,7 @@ fn_docker_config_kernel_source() {
     #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
     export PACKAGES_DIR="$SOURCES_FULLPATH/out-$KERNEL_NAME"
     ## Set dirs to mount on the docker container
-    buildd_fullpath="${$PACKAGES_DIR}" 
+    buildd_fullpath="${PACKAGES_DIR}" 
     buildd_sources_fullpath="${KERNEL_DIR}"
     ## Set kernel build output paths
     KERNEL_BUILD_OUT_KOBJ_PATH="$KERNEL_DIR/out/KERNEL_OBJ"
@@ -81,6 +77,23 @@ fn_docker_config_kernel_source() {
     [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
     ## Backups info
     BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+}
+
+fn_docker_plugin_container_conf() {
+    debug "fn_docker_plugin_container_conf has no any code yet!"
+}
+
+fn_docker_config_kernel_source() {
+    ## TODO: Put in the config file
+    APT_INSTALL_EXTRA=" \
+        bison flex libpcre3 libfdt1 libssl-dev libyaml-0-2 \
+        linux-initramfs-halium-generic linux-initramfs-halium-generic:arm64 \
+        linux-android-${DEVICE_VENDOR}-${DEVICE_MODEL}-build-deps \
+        mkbootimg mkdtboimg avbtool bc android-sdk-ufdt-tests cpio device-tree-compiler kmod libkmod2 \
+        gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android \
+        libgcc-4.9-dev-aarch64-linux-android-cross \
+        binutils-gcc4.9-aarch64-linux-android binutils-aarch64-linux-gnu"
+       #clang-android-6.0-4691093 clang-android-10.0-r370808 \
 }
 
 fn_kernel_config_droidian() {
@@ -236,7 +249,7 @@ fn_build_kernel_on_container() {
 
     ## Releng command
     echo >> $KERNEL_DIR/${build_script_name}
-    echo "RELENG_HOST_ARCH=${host_arch} releng-build-package" >> $KERNEL_DIR/${build_script_name}
+    echo "RELENG_HOST_ARCH=${releng_host_arch} releng-build-package" >> $KERNEL_DIR/${build_script_name}
     ${SUDO} chmod u+x $KERNEL_DIR/${build_script_name}
 
     # ask for disable install build deps in debian/kernel.mk if enabled.
@@ -253,4 +266,9 @@ fn_build_kernel_on_container() {
     echo; echo "Compilation finished."
 
     # fn_create_outputs_backup
+}
+
+fn_plugin_sub_exec()  {
+    ## Call build-package
+    fn_build_kernel_on_container
 }
