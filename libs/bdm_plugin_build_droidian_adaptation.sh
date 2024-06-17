@@ -47,7 +47,7 @@
 
 fn_docker_plugin_container_vars() {
     ## Docker container vars
-    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-vars"
+    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-adaps-vars"
     CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG="${droidian_host_suite}-${droidian_host_arch}"
