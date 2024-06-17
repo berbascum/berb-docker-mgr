@@ -263,15 +263,25 @@ fn_pkg_source_type_detection() {
             IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
             [ -z "${IS_KERNEL}" ] \
 	        && abort "No Linux kernel source found in current dir."
-            APT_INSTALL_EXTRA="releng-tools"
-	    INFO "Kernel source dir detected!"
+            #APT_INSTALL_EXTRA="releng-tools"
+	    info "Kernel source dir detected!"
 	    docker_mode="kernel"
+	    pkg_type="droidian_kernel"
+    	    ## sparse dir found, may be a droidian package
+	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
+	        && abort "build_droidian_main library not found!"
+	    debug "May be a Droidian package, loading build_droidian_main lib..."
+	    . ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
+            fn_plugin_build_droidian_main_set_user_config
+            fn_plugin_build_droidian_main_load_device_vars
+	    ## Import the build droidian kernel plugin
+	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
+	        && error "build_droidian_adaptation library not found!"
+	    debug "Loading plugin_build_${pkg_type} lib..."
+	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
 	    ## Load berb-build-droidian-kernel.sh
-	    info "Cal implementar alguna cosa que sapiga que és kernel droidian"
-	    pause "tipus ask What type of kernel source you want to build?"
-	    source  /usr/lib/${TOOL_NAME}/bdm_plugin_build_droidian_kernel.sh
-	    ## Call kernel source config function
-	    fn_docker_config_kernel_source
+	    #info "Cal implementar alguna cosa que sapiga que és kernel droidian"
+	    #pause "tipus ask What type of kernel source you want to build?"
     else
         abort "Not supported package dir found!"
     fi

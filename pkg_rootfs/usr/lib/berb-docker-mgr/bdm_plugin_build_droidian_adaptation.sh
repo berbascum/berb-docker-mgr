@@ -47,7 +47,7 @@
 
 fn_docker_plugin_container_vars() {
     ## Docker container vars
-    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-vars"
+    fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-adaps-vars"
     CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG="${droidian_host_suite}-${droidian_host_arch}"
@@ -96,21 +96,19 @@ fn_docker_plugin_container_conf() {
 
 fn_build_package_on_container() {
     # Configuring the build script
-    build_script_name="build-package-with-droidian-releng.sh"
-    bdm_url_base="https://raw.githubusercontent.com/berbascum/berb-docker-mgr"
-    bdm_url_build_script_relpath="sid/libs/${build_script_name}"
-    ## Download the build launcher script
-    rm ${SOURCES_FULLPATH}/${build_script_name}
-    wget "${bdm_url_base}/${bdm_url_build_script_relpath}"
+    [ -f "${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}" ] && rm ${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
+    [ ! -f "${BUILD_SCRIPT_FULLPATH_FILE}" ] && error "Build script template not found!"
+    cp "${BUILD_SCRIPT_FULLPATH_FILE}" "${SOURCES_FULLPATH}"
+
     ## Set x permissions
-    chmod +x ${SOURCES_FULLPATH}/${build_script_name}
+    chmod +x ${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
     ## Config the releng arch in the build launcher
     sed -i "s/RELENG_HOST_ARCH=\".*\"/RELENG_HOST_ARCH=\"${releng_host_arch}\"/g" \
-	${SOURCES_FULLPATH}/${build_script_name}
+	${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
     ## Build package on container
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/${build_script_name} --run
+    docker exec -it $CONTAINER_NAME bash /buildd/sources/${BUILD_SCRIPT_NAME} --run
     ## Remove the build script
-    rm ${SOURCES_FULLPATH}/${build_script_name}
+    rm ${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
     ## Some output files may have owned by root, fixing:
     ${SUDO} chown -R ${USER}: "${OUTPUT_FULLPATH}"
 
@@ -129,17 +127,10 @@ fn_plugin_sub_exec()  {
     ## Copy the package files to the pkg rootfs dir
        ## Designed for build_debian_package but may be usefull in future
 #       fn_copy_files_to_pkg_dir
-    ## Commit the updated $pkg_rootfs packacing dir
-##    fn_bblgit_commit_changes "${pkg_rootfs_dir}" "Update: pkg_rootfs_dir packaging dir contents"
-    ## Build the change log from the git history
-#    fn_bblgit_changelog_build
-    ## Update version and channel on the main src file
-       ## Designed for build_debian_package but may be usefull in future
-#       fn_update_main_src_file_version_var
-    ## Commit the prebuild changes
-#    fn_bblgit_changelog_commit
     ## Create the tag from user input
     fn_bblgit_create_tag
+    ## Check origin status, an updated branch in origin is required
+    fn_bblgit_origin_status_ckeck
     ## Call build-package
     fn_build_package_on_container
 }
