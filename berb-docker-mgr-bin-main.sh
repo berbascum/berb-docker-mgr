@@ -211,12 +211,15 @@ fn_bdm_docker_menu_fzf() {
 }
 
 fn_bdm_docker_multiarch_enable() {
-    if [ -n $(echo "${pkg_type}" | grep "droidian") ]; then
-        pause "Es droidian a multiarch check principal" 
+    debug "Starting bdm multiarch enable fn for pkg_type = ${pkg_type}"
+    if [[ "${pkg_type}" == droidian-* ]]; then
+        ## Enable multiarch in docker as suggested in the official Droidian porting guide
+        debug "droidian-* uses docker img with preinst cross comps, only enabling docker support" 
         ## Enable multiarch in docker as suggested in the official Droidian porting guide
         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
         sleep 1
     fi
+    #
     ## Host arch may be defined by a caller function
     [ -n "${HOST_ARCH_DETECTED}" ] && host_arch="${HOST_ARCH_DETECTED}"
     ## If defined TARGET_ARCH_CONTROL, use it as target_arch replacing the config file value
