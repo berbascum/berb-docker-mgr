@@ -67,21 +67,40 @@ fn_build_package() {
 }
 
 fn_build_package_on_container() {
+    ## Usefull vars
+    #export DEB_BUILD_OPTIONS="parallel=$(nproc)"
+    #export DEB_HOST_ARCH=arm64
+    #export CC=aarch64-linux-gnu-gcc
+    #export CXX=aarch64-linux-gnu-g++
+    #export PATH=/usr/aarch64-linux-gnu/bin:$PATH
+    #export CROSS_COMPILE=aarch64-linux-gnu-
     #
+    script="build-debian-package.sh"
     ## Create a build launcher and copy to the sources dir
-    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo >> ${SOURCES_FULLPATH}/build-debian-package.sh
-    echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/build-debian-package.sh
+    echo "#!/bin/bash" > ${SOURCES_FULLPATH}/${script}
+    echo >> ${SOURCES_FULLPATH}/${script}
+    echo "cd /buildd/sources" >> ${SOURCES_FULLPATH}/${script}
+    if [ "${CROSS_ENABLE}" == "True" ]; then
+        echo >> ${SOURCES_FULLPATH}/${script}
+        echo "## Cross compile vars" >> ${SOURCES_FULLPATH}/${script}
+        echo "export DEB_HOST_ARCH=${target_arch}" >> ${SOURCES_FULLPATH}/${script}
+        echo "export CC=${cross_arch}-linux-gnu-gcc" >> ${SOURCES_FULLPATH}/${script}
+        echo "export CXX=${cross_arch}-linux-gnu-g++" >> ${SOURCES_FULLPATH}/${script}
+        echo "export CROSS_COMPILE=${cross_arch}-linux-gnu-" >> ${SOURCES_FULLPATH}/${script}
+        echo "## Build package" >> ${SOURCES_FULLPATH}/${script}
+        echo "dpkg-buildpackage -us -uc -Pcross" >> ${SOURCES_FULLPATH}/${script}
+    else
+        echo "## Build package" >> ${SOURCES_FULLPATH}/${script}
+        echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/${script}
+    fi
     ## Set x permissions
-    chmod +x ${SOURCES_FULLPATH}/build-debian-package.sh
-    docker exec -it $CONTAINER_NAME bash /buildd/sources/build-debian-package.sh
-    rm ${SOURCES_FULLPATH}/build-debian-package.sh
+    chmod +x ${SOURCES_FULLPATH}/${script}
+    ## Exec command
+    docker exec $CONTAINER_NAME bash /buildd/sources/${script}
+    #rm ${SOURCES_FULLPATH}/${script}
     INFO "Build package finished."
 }
 
-#fn_plugin_build_debia_package() {
 fn_plugin_sub_exec()  {
     ## Check the git workdir status and abort if not clean
     fn_bblgit_workdir_status_check
@@ -98,7 +117,8 @@ fn_plugin_sub_exec()  {
     ## Build the change log from the git history
     fn_bblgit_changelog_build
     ## Commit the updated files before building
-    fn_bblgit_commit_changes "Build release: pre-configs before building new version ${tag_version}-${tag_release}"
+    fn_bblgit_commit_changes \
+	"Build release: pre-configs before building new version ${tag_version}-${tag_release}"
     ## Create the tag from user input
     fn_bblgit_create_tag
     ## Check origin status, an updated branch in origin is required
