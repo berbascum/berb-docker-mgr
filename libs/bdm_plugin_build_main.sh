@@ -212,12 +212,16 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
     info "Finished adding systemd wants links on debian .links and .dirs"
 }
 fn_plugin_build_main_check_archs() {
-    debug "Starting archs check"
+    debug "Starting archs check from ${FUNCNAME[0]}"
+    CROSS_ENABLE="False"
     HOST_ARCH_DETECTED=$(dpkg --print-architecture)
     TARGET_ARCH_CONTROL=$(cat debian/control | grep "^Architecture: " | awk '{print $2}')
+    ## For "all" arch the multiarch is not needed
+    [ "${TARGET_ARCH_CONTROL}" == "all" ] && return
+    ## If arch in debian/control != host_arch detected, multiarch is needed
     [ "${TARGET_ARCH_CONTROL}" != "${HOST_ARCH_DETECTED}" ] && CROSS_ENABLE="True" \
 	&& fn_bdm_docker_multiarch_enable
-    debug "After fn_bdm_docker_multiarch_enable"
+    debug "Just exited from fn_bdm_docker_multiarch_enable"
 }
 
 fn_plugin_build_main_pkg_source_type_detection() {
