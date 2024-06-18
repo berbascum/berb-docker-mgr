@@ -110,10 +110,10 @@ fn_plugin_sub_exec()  {
     fn_bblgit_last_two_tags_check
     ## Get package info
     fn_get_package_info
+    ## Update version and release on the main src file
+    fn_update_main_src_file_version_var
     ## Copy the package files to the pkg rootfs dir
     fn_copy_files_to_pkg_dir
-    ## Update version and channel on the main src file
-    fn_update_main_src_file_version_var
     ## Build the change log from the git history
     fn_bblgit_changelog_build
     ## Commit the updated files before building

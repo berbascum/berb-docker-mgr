@@ -1,15 +1,15 @@
-berb-docker-mgr (2.4.0.1+git20240618150544.c8d717c.testing) testing; urgency=medium
+berb-docker-mgr (2.4.1.1+git20240618153542.6ab5d71.testing) testing; urgency=medium
 
   [berbascum]
+  * (6ab5d71) Update: doc, some update in plugin_build_debian_package comments 
+  * (67b0599) Fix: bug informed in commit c308102 where version num in pkg_rootfs_dir HEADER was not updating 
+  * (c308102) Fix: version number from main script HEADER in pkg_rootfs_dir not updated, a bug is causing it 
+  * (b74aabc) Build release: pre-configs before building new version 2.4.0.1-testing 
   * (c8d717c) Update: .gitignore, add exception "commit_msg_new_ver" 
   * (1f7185b) Fix: version number from main script HEADER was wrong 
   * (0f8de79) Fix: add all arch detected in debian/control exception since not needs multiarch 
   * (150bc58) Fix: fixed the multiarch_enable exception for pkg_types "^droidian-*" in this case only docker support will be enabled but no compilers will be installed 
   * (6d21e18) Update: The enable multiarch in containers feature has been rewrited to autodetect crosscompiling checking the debian control file, This feature applies only to build_debian_package 
   * (41befb9) Update: some arch related notes were added to the bdm-user-main.conf file 
-  * (563a5bd) Fix: typo calling docker-container-adapt-vars section in plugin_build_droidian_adaptation 
-  * (78ad505) Build release: pre-configs before building new version 2.3.1.1-testing 
-  * (c6e8538) Update: plugin_build_droidian_kernel integration finished and working 
-  * (2b30815) Split: docker-container-vars section from droidian-config file has been splited in adapt and kernel sections 
 
- -- berbascum <berbascum@ticv.cat>  Tue, 18 Jun 2024 15:05:44 +0200
+ -- berbascum <berbascum@ticv.cat>  Tue, 18 Jun 2024 15:35:42 +0200
