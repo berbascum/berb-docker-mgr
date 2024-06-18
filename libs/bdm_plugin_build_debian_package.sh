@@ -97,7 +97,7 @@ fn_build_package_on_container() {
     chmod +x ${SOURCES_FULLPATH}/${script}
     ## Exec command
     docker exec $CONTAINER_NAME bash /buildd/sources/${script}
-    #rm ${SOURCES_FULLPATH}/${script}
+    rm ${SOURCES_FULLPATH}/${script}
     INFO "Build package finished."
 }
 
