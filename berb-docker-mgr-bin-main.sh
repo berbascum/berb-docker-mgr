@@ -249,6 +249,7 @@ fn_bdm_docker_multiarch_enable() {
 	| grep ${target_arch})
     if [ -z "${foreign_arch_dckr}" ]; then
 	debug "target arch not enabled in docker host. Trying to do..."
+        docker exec $CONTAINER_NAME dpkg --add-architecture ${target_arch}
         arr_packages=( ${arr_apt_pkgs_cross_arm64[@]} ) && fn_bdm_docker_apt_install_pks
 	foreign_arch_dckr=$(docker exec $CONTAINER_NAME dpkg --print-foreign-architectures \
 	    | grep ${target_arch})
