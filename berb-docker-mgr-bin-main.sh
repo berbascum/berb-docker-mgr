@@ -44,7 +44,7 @@ fn_header_info() {
     BIN_SRC_TYPE="bash"
     BIN_SRC_EXT="sh"
     BIN_NAME="berb-docker-mgr"
-    TOOL_VERSION="2.3.1.1"
+    TOOL_VERSION="2.2.1.1"
     TOOL_RELEASE="testing"
     URGENCY='optional'
     TESTED_BASH_VER='5.2.15'
@@ -211,16 +211,62 @@ fn_bdm_docker_menu_fzf() {
 }
 
 fn_bdm_docker_multiarch_enable() {
-    ${SUDO} apt-get update && apt-get install -y qemu-user-static
-    ${SUDO} dpkg --add-architecture ${target_arch}
-    arr_apt_pkgs_cross_arm64=( "gcc-${cross_arch}-linux-gnu" "g++-${cross_arch}-linux-gnu" \
-	                       "libc6-${target_arch}-cross" )
-    arr_packages=( ${arr_apt_pkgs_cross_arm64[@]} ) && fn_bdm_docker_apt_install_pks
+    if [ -n $(echo "${pkg_type}" | grep "droidian") ]; then
+        pause "Es droidian a multiarch check principal" 
+        ## Enable multiarch in docker as suggested in the official Droidian porting guide
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        sleep 1
+    fi
+    ## Host arch may be defined by a caller function
+    [ -n "${HOST_ARCH_DETECTED}" ] && host_arch="${HOST_ARCH_DETECTED}"
+    ## If defined TARGET_ARCH_CONTROL, use it as target_arch replacing the config file value
+    [ -n "${TARGET_ARCH_CONTROL}" ] && target_arch="${TARGET_ARCH_CONTROL}"
+    ## If host and tager archs are the same there is nothing to do!
+    [ "${target_arch}" == "${host_arch}" ] && debug "target and host archs are =, skip!" && return
+    ## Define cross packages to install
+    arr_apt_pkgs_cross_arm64=( "qemu-user-static" \
+	    "crossbuild-essential-${target_arch}" "libc6-dev-${target_arch}-cross" \
+	    "qemu-user-static" "libc6-${target_arch}-cross" "linux-libc-dev-${target_arch}-cross" )
     #apt-get install binfmt-support
-
+    ## Check if target_arch support is installed on the host
+    cmd='dpkg --print-foreign-architectures'
+    foreign_arch_host=$(eval "${cmd}" | grep "${target_arch}")
+    debug "foreign_arch_host = ${foreign_arch_host}"
+    if [ -z "${foreign_arch_host}" ]; then
+	debug "target arch not enabled in host. Trying to do..."
+	${SUDO} dpkg --add-architecture "${target_arch}"
+        ${SUDO} apt-get update && apt-get install -y qemu-user-static
+        foreign_arch_host=$(eval "${cmd}" | grep "${target_arch}")
+        [ -z "${foreign_arch_host}" ] && error "Enabling multiarch on host failed!"
+    fi
+    ## Check if target_arch support is installed on the host
+    cmd='dpkg --print-foreign-architectures'
+    #foreign_arch_dckr=$(docker exec $CONTAINER_NAME dpkg --print-foreign-architectures \
+    foreign_arch_dckr=$(docker exec $CONTAINER_NAME dpkg --print-foreign-architectures \
+	| grep ${target_arch})
+    if [ -z "${foreign_arch_dckr}" ]; then
+	debug "target arch not enabled in docker host. Trying to do..."
+        arr_packages=( ${arr_apt_pkgs_cross_arm64[@]} ) && fn_bdm_docker_apt_install_pks
+	foreign_arch_dckr=$(docker exec $CONTAINER_NAME dpkg --print-foreign-architectures \
+	    | grep ${target_arch})
+        debug "foreign_arch_dckr = ${foreign_arch_dckr}"
+        [ -z "${foreign_arch_dckr}" ] && error "Enabling multiarch on docker failed!"
+    fi
+    ## Get the corresponding cross arch from the installed cross compilers
+    cross_arch=$(docker exec $CONTAINER_NAME dpkg -l | grep "^ii  gcc-.*-linux-gnu" \
+	| grep "GNU C compiler for the ${target_arch} architecture" | awk '{print $2}' \
+	| sed 's/gcc-//g' | sed 's/-linux-gnu//g')
+    debug "cross_arch ${cross_arch}"
+    [ -z "${cross_arch}" ] && error "Can not determine the cross arch from the installed compilers"
     ## Enable multiarch in docker as suggested in the official Droidian porting guide
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    sleep 5
+    sleep 1
+    ## Restarting container
+    fn_bdm_docker_stop_container
+    fn_bdm_docker_start_container
+    qemu_dckr_found=$(docker exec $CONTAINER_NAME  find /usr/bin/ -name "qemu-${cross_arch}-static")
+    debug "qemu_dckr_found = ${qemu_dckr_found}"
+    [ -z "${qemu_dckr_found}" ] && error "Multiarch failed to enable!"
 }
 
 fn_bdm_docker_create_container() {
@@ -291,8 +337,10 @@ fn_bdm_docker_start_container() {
     IS_STARTED=$(docker ps -a | grep $CONTAINER_NAME | awk '{print $5}' | grep -c 'Up')
     if [ "$IS_STARTED" -eq "0" ]; then
 	## Ask for enable multiarch support
-	ASK "Want to start the docker multiarch compat? [ y|n ]: "
-	[ "${answer}" == "y" ] && fn_bdm_docker_multiarch_enable
+	#ASK "Want to start the docker multiarch compat? [ y|n ]: "
+	#docker start $CONTAINER_NAME
+	#[ "${answer}" == "y" ] && fn_bdm_docker_multiarch_enable
+	#docker stop $CONTAINER_NAME
 	## Start the container
         INFO "Starting container ${CONTAINER_NAME}"
 	docker start $CONTAINER_NAME

@@ -211,8 +211,16 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
     done
     info "Finished adding systemd wants links on debian .links and .dirs"
 }
+fn_plugin_build_main_check_archs() {
+    debug "Starting archs check"
+    HOST_ARCH_DETECTED=$(dpkg --print-architecture)
+    TARGET_ARCH_CONTROL=$(cat debian/control | grep "^Architecture: " | awk '{print $2}')
+    [ "${TARGET_ARCH_CONTROL}" != "${HOST_ARCH_DETECTED}" ] && CROSS_ENABLE="True" \
+	&& fn_bdm_docker_multiarch_enable
+    debug "After fn_bdm_docker_multiarch_enable"
+}
 
-fn_pkg_source_type_detection() {
+fn_plugin_build_main_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)
     ## check for git dir
@@ -301,7 +309,10 @@ fn_plugin_build_main_docker_container_reqs() {
         ASK "Want to start \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
         [ "${answer}" != "y" ] && abort "Aborted by user"
         fn_bdm_docker_start_container
+        ## Check architectures
     fi
+    ## Check is multiarch is needed
+    [ "${pkg_type}" == "debian_package" ] &&  fn_plugin_build_main_check_archs
 }
 
 << "NOT_USED_YET"
@@ -352,7 +363,7 @@ NOT_USED_YET
 
 
 ## Script execution
-fn_pkg_source_type_detection
+fn_plugin_build_main_pkg_source_type_detection
 fn_docker_plugin_container_vars
 fn_bdm_docker_container_config
 fn_plugin_build_main_docker_container_reqs
