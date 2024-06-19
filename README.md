@@ -1,6 +1,9 @@
 # berb-docker-mgr
 Bash script to manage docker containers.
 
+### Installation
+Add the berb-apt-git-repo and apt-get install berb-docker-mgr
+
 ### Usage
 
 ## Tips
