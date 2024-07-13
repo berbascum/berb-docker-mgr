@@ -22,5 +22,5 @@ extra_packages=(
 
 extra_packages_string=$(printf "%s " "${extra_packages[@]}")
 
-docker build --platform=linux/arm64 --build-arg EXTRA_PACKAGES="$extra_packages_string" -t berb-build-env:trixie-amd64 .
+docker build --platform=linux/amd64 -f Dockerfile_amd64 --build-arg EXTRA_PACKAGES="$extra_packages_string" -t berb-build-env:trixie-amd64 .
 
