@@ -1,7 +1,6 @@
 last_changes
 commit_msg
 commit_msg_new_ver
-build-debian-package.sh
 out-berb-docker-mgr
 
 ## Debhelper outputs
