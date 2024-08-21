@@ -254,7 +254,6 @@ fn_plugin_build_main_pkg_source_type_detection() {
     elif [ -e "${START_DIR}/sparse" ]; then
         ## Check for debian control
         fn_check_for_debian_control ## Sets package_name
-
 	## Set docker mode
 	docker_mode="package"
 	pkg_rootfs_dir="sparse"
@@ -268,7 +267,7 @@ fn_plugin_build_main_pkg_source_type_detection() {
         fn_plugin_build_droidian_main_load_device_vars
 	#
 	## Get the package type
-	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
++	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" -o -f "debian/adaptation-${vendor}-${codename}-api${apiver}-configs.install" ]; then
 	    pkg_type="droidian_adaptation"
 	    debug "Package type detected: \"${pkg_type}\""
 	    ## Import the build droidian package lib
