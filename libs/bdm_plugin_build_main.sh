@@ -250,6 +250,22 @@ fn_plugin_build_main_pkg_source_type_detection() {
 	info "Package type detected: \"${pkg_type}\""
 	## Source the corresponding pkg_type lib
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
+    #
+    # Cerca el dir rootfs-templates
+    elif [ -e "${START_DIR}/rootfs-templates" ]; then
+	docker_mode="droidian-rootfs"
+	pkg_type="droidian_rootfs"
+	info "Droidian rootfs recipes detected"
+	package_name="droidian-images"
+	## Load build droidian main plugin
+	[ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
+            && abort "build_droidian_main library not found!"
+        . ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
+        fn_plugin_build_droidian_main_set_user_config
+        fn_plugin_build_droidian_main_load_device_vars
+	## Source the corresponding sub-plugin
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
+    #
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
         ## Check for debian control
