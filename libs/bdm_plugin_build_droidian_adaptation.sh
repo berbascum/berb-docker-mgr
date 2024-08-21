@@ -108,7 +108,7 @@ fn_build_package_on_container() {
     ## Build package on container
     docker exec -it $CONTAINER_NAME bash /buildd/sources/${BUILD_SCRIPT_NAME} --run
     ## Remove the build script
-    rm ${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
+    #rm ${SOURCES_FULLPATH}/${BUILD_SCRIPT_NAME}
     ## Some output files may have owned by root, fixing:
     ${SUDO} chown -R ${USER}: "${OUTPUT_FULLPATH}"
 
@@ -130,7 +130,7 @@ fn_plugin_sub_exec()  {
     ## Create the tag from user input
     fn_bblgit_create_tag
     ## Check origin status, an updated branch in origin is required
-    fn_bblgit_origin_status_ckeck
+#    fn_bblgit_origin_status_ckeck
     ## Call build-package
     fn_build_package_on_container
 }
