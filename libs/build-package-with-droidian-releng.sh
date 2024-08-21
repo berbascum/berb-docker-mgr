@@ -63,7 +63,7 @@ fn_releng_changelog_inject_vars() {
 
 fn_build_package() {
     ## Call releng
-    RELENG_FULL_BUILD="yes" RELENG_HOST_ARCH="amd64" releng-build-package
+    RELENG_FULL_BUILD="yes" RELENG_HOST_ARCH="amd64" DEB_BUILD_OPTIONS=nocheck  releng-build-package
     ## TODO: #RELENG_TAG_PREFIX=  RELENG_BRANCH_PREFIX
 }
 
