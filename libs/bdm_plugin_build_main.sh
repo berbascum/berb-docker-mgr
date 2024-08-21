@@ -301,20 +301,33 @@ fn_plugin_build_main_pkg_source_type_detection() {
         else
 	    abort "Package is using sparse dir model, but type is not recognized!"
 	fi
-    # Cerca un arxiu README de linux kernel
+    # Cerca un arxiu Makefile de linux kernel
     elif [ -e "$START_DIR/Makefile" ]; then
-	    ## Check if is kernel
-            IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
-            [ -z "${IS_KERNEL}" ] \
-	        && abort "No Linux kernel source found in current dir."
-            #APT_INSTALL_EXTRA="releng-tools"
-	    info "Kernel source dir detected!"
-	    docker_mode="kernel"
+	## Check if is kernel
+        IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
+        [ -z "${IS_KERNEL}" ] \
+	    && abort "No Linux kernel Makefile found in the current dir."
+        #APT_INSTALL_EXTRA="releng-tools"
+	info "Kernel source dir detected!"
+	docker_mode="kernel"
+        ## kernel Makefile, may be a droidian kernel
+	debug "Lets check for a known packaging..."
+	if [ -f "./debian/kernel-info.mk" ]; then
+	    ## TODO: no pkg_name implemented yet
+	    ## for droidian_kernel
+	    ## since the control file mauy not exist
+	    ## INFO: CONTAINER_NAME for droidian_kernels
+	    ## will be the source code base dir name
+	    ## since control may contain the same pkg_name
+	    ## in diferent sources when test or develop
 	    pkg_type="droidian_kernel"
-    	    ## sparse dir found, may be a droidian package
+            # Set KERNEL_NAME to current dir name
+            pkg_dir_name=$(basename ${START_DIR})
+	    info "${pkg_type} detected!"
+	    debug "loading build_droidian_main lib..."
+	    ## Load build_droidian plugin main lib
 	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
 	        && abort "build_droidian_main library not found!"
-	    debug "May be a Droidian package, loading build_droidian_main lib..."
 	    . ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
             fn_plugin_build_droidian_main_set_user_config
             fn_plugin_build_droidian_main_load_device_vars
@@ -323,9 +336,9 @@ fn_plugin_build_main_pkg_source_type_detection() {
 	        && error "build_droidian_adaptation library not found!"
 	    debug "Loading plugin_build_${pkg_type} lib..."
 	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
-	    ## Load berb-build-droidian-kernel.sh
-	    #info "Cal implementar alguna cosa que sapiga que és kernel droidian"
-	    #pause "tipus ask What type of kernel source you want to build?"
+	else
+            abort "Not supported kernel packaging"
+	fi
     else
         abort "Not supported package dir found!"
     fi

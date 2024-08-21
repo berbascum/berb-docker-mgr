@@ -42,7 +42,7 @@
 fn_docker_plugin_container_vars() {
     ## Docker container vars
     fn_bdm_conf_file_load "CONF_USER_DROIDIAN" "docker-container-kernel-vars"
-    CONTAINER_BASE_NAME="build-droidian-env-${package_name}"
+    CONTAINER_BASE_NAME="build-droidian-env-${pkg_dir_name}"
     IMAGE_BASE_NAME='quay.io/droidian/build-essential'
     IMAGE_BASE_TAG="${droidian_host_suite}-${droidian_host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
@@ -53,10 +53,8 @@ fn_docker_plugin_container_vars() {
     SOURCES_FULLPATH="$(dirname ${START_DIR})"
     ## get kernel info
     export KERNEL_DIR="${START_DIR}"
-    # Set KERNEL_NAME to current dir name
-    pkg_dirname=$(basename ${START_DIR})
-    package_name=${pkg_dirname}
-    KERNEL_NAME="${package_name}"
+#    package_name=${pkg_dirname}
+#    KERNEL_NAME="${package_name}"
     #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
     export PACKAGES_DIR="$SOURCES_FULLPATH/out-$KERNEL_NAME"
     ## Set dirs to mount on the docker container
