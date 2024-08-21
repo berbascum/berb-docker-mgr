@@ -228,9 +228,12 @@ fn_plugin_build_main_check_archs() {
 fn_check_for_debian_control() {
         ## Check for debian control
         fn_bblgit_debian_control_found # Abort if not
-        ## Get the package name from debian control
-        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
         debug "debian/control file check passed"
+}
+
+fn_get_control_pkg_name() {
+    ## Get the package name from debian control
+    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 }
 
 fn_plugin_build_main_pkg_source_type_detection() {
@@ -242,7 +245,9 @@ fn_plugin_build_main_pkg_source_type_detection() {
     # Cerca el dir pkg_rootfs
     if [ -e "${START_DIR}/pkg_rootfs" ]; then
         ## Check for debian control
-        fn_check_for_debian_control ## Sets package_name
+        fn_check_for_debian_control
+	## Set package_name
+        fn_get_control_pkg_name
 	## Set docker mode
 	docker_mode="package"
 	pkg_type="debian_package"
@@ -269,7 +274,9 @@ fn_plugin_build_main_pkg_source_type_detection() {
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
         ## Check for debian control
-        fn_check_for_debian_control ## Sets package_name
+        fn_check_for_debian_control
+	## Set package_name
+        fn_get_control_pkg_name
 	## Set docker mode
 	docker_mode="package"
 	pkg_rootfs_dir="sparse"
