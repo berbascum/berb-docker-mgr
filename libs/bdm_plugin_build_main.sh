@@ -211,6 +211,7 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
     done
     info "Finished adding systemd wants links on debian .links and .dirs"
 }
+
 fn_plugin_build_main_check_archs() {
     debug "Starting archs check from ${FUNCNAME[0]}"
     CROSS_ENABLE="False"
@@ -224,18 +225,24 @@ fn_plugin_build_main_check_archs() {
     debug "Just exited from fn_bdm_docker_multiarch_enable"
 }
 
+fn_check_for_debian_control() {
+        ## Check for debian control
+        fn_bblgit_debian_control_found # Abort if not
+        ## Get the package name from debian control
+        package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
+        debug "debian/control file check passed"
+}
+
 fn_plugin_build_main_pkg_source_type_detection() {
     ## Save start fullpath
     START_DIR=$(pwd)
     ## check for git dir
     fn_bblgit_dir_is_git # Abort if not
-    ## Check for debian control
-    fn_bblgit_debian_control_found # Abort if not
-    ## Get the package name from debian control
-    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-    debug "dir .git and debian/control checks passed"
+    debug "dir .git check passed"
     # Cerca el dir pkg_rootfs
     if [ -e "${START_DIR}/pkg_rootfs" ]; then
+        ## Check for debian control
+        fn_check_for_debian_control ## Sets package_name
 	## Set docker mode
 	docker_mode="package"
 	pkg_type="debian_package"
@@ -245,6 +252,9 @@ fn_plugin_build_main_pkg_source_type_detection() {
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
+        ## Check for debian control
+        fn_check_for_debian_control ## Sets package_name
+
 	## Set docker mode
 	docker_mode="package"
 	pkg_rootfs_dir="sparse"
