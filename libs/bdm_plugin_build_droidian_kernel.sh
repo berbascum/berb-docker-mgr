@@ -54,7 +54,7 @@ fn_docker_plugin_container_vars() {
     ## get kernel info
     export KERNEL_DIR="${START_DIR}"
 #    package_name=${pkg_dirname}
-#    KERNEL_NAME="${package_name}"
+    KERNEL_NAME="${pkg_dir_name}"
     #kernel_device=$(echo ${KERNEL_NAME} | awk -F'-' '{print $(NF-1)"-"$NF}')
     export PACKAGES_DIR="$SOURCES_FULLPATH/out-$KERNEL_NAME"
     ## Set dirs to mount on the docker container
