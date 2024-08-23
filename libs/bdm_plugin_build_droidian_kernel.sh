@@ -213,9 +213,6 @@ fn_kernel_config_droidian() {
 }
 
 fn_build_kernel_on_container() {
-    ## Call droidian kernel configuration function
-    fn_kernel_config_droidian
-
     # Script creation to launch compilation inside the container.
     build_script_name="compile-droidian-kernel.sh"
     echo '#!/bin/bash' > $KERNEL_DIR/${build_script_name}
@@ -269,6 +266,8 @@ fn_build_kernel_on_container() {
 }
 
 fn_plugin_sub_exec()  {
+    ## Call droidian kernel configuration function
+    fn_kernel_config_droidian
     ## Call build-package
     fn_build_kernel_on_container
 }
