@@ -134,6 +134,7 @@ fn_kernel_config_droidian() {
 	replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
 	sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" \
 		${KERNEL_INFO_MK_FULLPATH_FILE}
+	PAUSE "Kernel version configured on kernel-info.mk"
 
 	## Miniml kernel-info.mk config
 	echo; read -p "Enter a device vendor name: " answer
@@ -147,6 +148,7 @@ fn_kernel_config_droidian() {
 	echo; read -p "Enter the defconf file name: " answer
 	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
+	PAUSE "Kernel version configured on kernel-info.mk"
 
     ## Check if one of the mínimal vars is unconfigured
     ## TODO: Implement a for to check all the mínimal vars
