@@ -266,7 +266,10 @@ fn_build_kernel_on_container() {
 }
 
 fn_plugin_sub_exec()  {
-    ## Call droidian kernel configuration function
+    ## TODO: Improve:  Call droidian kernel configuration function
+    ## The config currentli wgets packaging files from fttec repo
+    ## Want to improve cloning a specific template repo:
+    #https://github.com/droidian-berb/droidian-kernel-build-template
     fn_kernel_config_droidian
     ## Call build-package
     fn_build_kernel_on_container
