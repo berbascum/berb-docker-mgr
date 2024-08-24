@@ -123,7 +123,7 @@ fn_set_kernel_version_info_mk() {
 	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-    PAUSE "build_droidian_kernel: Kernel version configured on kernel-info.mk"
+    info "build_droidian_kernel: Kernel version configured on kernel-info.mk"
 }
 
 fn_kernel_config_droidian() {
