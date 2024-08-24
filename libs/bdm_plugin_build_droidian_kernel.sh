@@ -75,6 +75,11 @@ fn_docker_plugin_container_vars() {
     [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
     ## Backups info
     BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+    #
+    ## Get kernel kersion
+    fn_get_kernel_version
+    ## Set kernel kersion in kernel-info.mk
+    fn_set_kernel_version_info_mk
 }
 
 fn_docker_plugin_container_conf() {
@@ -94,12 +99,7 @@ fn_docker_config_kernel_source() {
        #clang-android-6.0-4691093 clang-android-10.0-r370808 \
 }
 
-fn_kernel_config_droidian() {
-    ## Check and install required packages
-    arr_pack_reqs=( "linux-packaging-snippets" )
-
-    # Temporary disabled 2024-05-17 ## fn_bdm_apt_upgr_install_pks "${arr_pack_reqs[@]}"
-
+fn_get_kernel_version() {
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
     for version_str in ${arr_kernel_version_str[@]}; do
@@ -107,10 +107,30 @@ fn_kernel_config_droidian() {
     done
     KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
     KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
+}
+
+fn_set_kernel_version_info_mk() {
+    KERNEL_INFO_MK_FILENAME="kernel-info.mk"
+    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
+    [ -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
+	&& ABORT "kernel-info.mk not found!"
+    info "Setting the kernel version in kernel-info.mk..."
+	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+    replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+    sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+    PAUSE "Kernel version configured on kernel-info.mk"
+}
+
+fn_kernel_config_droidian() {
+    PAUSE "${FUNCNAME[0]} is deprecated..."
+    ## Check and install required packages
+    arr_pack_reqs=( "linux-packaging-snippets" )
+
+    # Temporary disabled 2024-05-17 ## fn_bdm_apt_upgr_install_pks "${arr_pack_reqs[@]}"
 
     ## Config debian packaging
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
-    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/kernel-info.mk"
+    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
     ## Create packaging dirs if not exist
     arr_pack_dirs=( "debian" "debian/source" "debian/initramfs-overlay/scripts" "droidian/scripts" "droidian/common_fragments" )
 
@@ -128,13 +148,8 @@ fn_kernel_config_droidian() {
         ## Check if the kernel snippet was created
         [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
 
-	## Configuring the kernel version on kernel-info.mk
-	echo; echo "Configuring the kernel version on kernel-info.mk..."
-	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
-	replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
-	sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" \
-		${KERNEL_INFO_MK_FULLPATH_FILE}
-	PAUSE "Kernel version configured on kernel-info.mk"
+	## Set the kernel version in kernel-info.mk
+	#fn_set_kernel_version_info_mk
 
 	## Miniml kernel-info.mk config
 	echo; read -p "Enter a device vendor name: " answer
@@ -148,7 +163,7 @@ fn_kernel_config_droidian() {
 	echo; read -p "Enter the defconf file name: " answer
 	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
-	PAUSE "Kernel version configured on kernel-info.mk"
+    PAUSE "Device vars configured on kernel-info.mk"
 
     ## Check if one of the mínimal vars is unconfigured
     ## TODO: Implement a for to check all the mínimal vars
@@ -183,6 +198,7 @@ fn_kernel_config_droidian() {
         chmod +x ${KERNEL_DIR}/debian/initramfs-overlay/scripts/halium-hooks
     fi
 
+<< "BLOCK_DISABLED"
     ## Add defconf fragments
     DEFCONF_FRAGS_DIR="droidian"
     DEFCONF_COMM_FRAGS_DIR="${DEFCONF_FRAGS_DIR}/common_fragments"
@@ -207,6 +223,7 @@ fn_kernel_config_droidian() {
     [ ! -f "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config" ] \
 	&& cp -v "${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}-sample.config" \
 	"${KERNEL_DIR}/${DEFCONF_FRAGS_DIR}/${DEVICE_MODEL}.config"
+BLOCK_DISABLED
 
     ## Sow vars defined
     fn_print_vars
