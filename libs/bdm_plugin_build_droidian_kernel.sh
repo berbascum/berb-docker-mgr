@@ -34,7 +34,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "The script tag --run is required!"
+[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "build_droidian_kernel: The script tag --run is required!"
 
 ############################
 ## Kernel build functions ##
@@ -75,15 +75,17 @@ fn_docker_plugin_container_vars() {
     [ -d "$KERNEL_BUILD_OUT_OTHER_PATH" ] || mkdir -v $KERNEL_BUILD_OUT_OTHER_PATH
     ## Backups info
     BACKUP_FILE_NOM="Backup-kernel-build-outputs-$KERNEL_NAME.tar.gz"
+    DEBUG "build_droidian_kernel: Finished container var definition"
     #
     ## Get kernel kersion
     fn_get_kernel_version
     ## Set kernel kersion in kernel-info.mk
     fn_set_kernel_version_info_mk
+    DEBUG "build_droidian_kernel: Finished getting kernel version"
 }
 
 fn_docker_plugin_container_conf() {
-    debug "fn_docker_plugin_container_conf has no any code yet!"
+    debug "build_droidian_kernel: fn_docker_plugin_container_conf has no any code yet!"
 }
 
 fn_docker_config_kernel_source() {
@@ -107,22 +109,25 @@ fn_get_kernel_version() {
     done
     KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
     KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
+    DEBUG "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
+    DEBUG "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
+
 }
 
 fn_set_kernel_version_info_mk() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
     [ -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
-	&& ABORT "kernel-info.mk not found!"
-    info "Setting the kernel version in kernel-info.mk..."
+	&& ABORT "build_droidian_kernel: kernel-info.mk not found!"
+    info "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
 	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-    PAUSE "Kernel version configured on kernel-info.mk"
+    PAUSE "build_droidian_kernel: Kernel version configured on kernel-info.mk"
 }
 
 fn_kernel_config_droidian() {
-    PAUSE "${FUNCNAME[0]} is deprecated..."
+    PAUSE "build_droidian_kernel: ${FUNCNAME[0]} is deprecated..."
     ## Check and install required packages
     arr_pack_reqs=( "linux-packaging-snippets" )
 
@@ -146,7 +151,7 @@ fn_kernel_config_droidian() {
     	CMD="cp ${src_fullpath_file} ${dst_fullpath_file}"
     	fn_bdm_docker_cmd_inside_container
         ## Check if the kernel snippet was created
-        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
+        [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] && abort "build_droidian_kernel: Error creating ${KERNEL_INFO_MK_FULLPATH_FILE}!"
 
 	## Set the kernel version in kernel-info.mk
 	#fn_set_kernel_version_info_mk
@@ -163,12 +168,12 @@ fn_kernel_config_droidian() {
 	echo; read -p "Enter the defconf file name: " answer
 	sed -i "s/KERNEL_DEFCONFIG.*/KERNEL_DEFCONFIG\ =\ ${answer}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
     fi
-    PAUSE "Device vars configured on kernel-info.mk"
+    PAUSE "build_droidian_kernel: Device vars configured on kernel-info.mk"
 
     ## Check if one of the mínimal vars is unconfigured
     ## TODO: Implement a for to check all the mínimal vars
     kernel_info_mk_is_configured=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'DEVICE_MODEL = device1')
-    [ -n "${kernel_info_mk_is_configured}" ] && abort "kernel-info.mk is unconfigured!"
+    [ -n "${kernel_info_mk_is_configured}" ] && abort "build_droidian_kernel: kernel-info.mk is unconfigured!"
 
     ## Set Kernel Info constants
     DEVICE_DEFCONFIG_FILE=$(cat ${KERNEL_INFO_MK_FULLPATH_FILE} | grep 'KERNEL_DEFCONFIG' | awk -F' = ' '{print $2}')
@@ -277,7 +282,7 @@ fn_build_kernel_on_container() {
     #	esac
     #fi
     docker exec -it $CONTAINER_NAME bash /buildd/sources/compile-droidian-kernel.sh
-    echo; echo "Compilation finished."
+    info "build_droidian_kernel: Compilation finished."
 
     # fn_create_outputs_backup
 }
