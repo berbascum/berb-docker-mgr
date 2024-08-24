@@ -117,7 +117,7 @@ fn_get_kernel_version() {
 fn_set_kernel_version_info_mk() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
-    [ -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
+    [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
 	&& ABORT "build_droidian_kernel: kernel-info.mk not found!"
     info "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
 	#replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
