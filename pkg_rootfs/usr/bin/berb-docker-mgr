@@ -44,7 +44,7 @@ fn_header_info() {
     BIN_SRC_TYPE="bash"
     BIN_SRC_EXT="sh"
     BIN_NAME="berb-docker-mgr"
-    TOOL_VERSION="2.4.1.2"
+    TOOL_VERSION="2.5.1.1"
     TOOL_RELEASE="testing"
     URGENCY='optional'
     TESTED_BASH_VER='5.2.15'
@@ -302,6 +302,14 @@ fn_bdm_docker_create_container() {
 		-v ${buildd_fullpath}:/buildd \
 		-v ${buildd_sources_fullpath}:/buildd/sources \
 	        -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
+
+	elif [ "${docker_mode}" == "droidian-rootfs" ]; then
+	    docker create --privileged --name ${CONTAINER_NAME} \
+		   -v $PWD/images:/buildd/out \
+	           -v /dev:/host-dev \
+		   -v /sys/fs/cgroup:/sys/fs/cgroup \
+		   -v $PWD:/buildd/sources \
+	           -i -t "${IMAGE_NAME}:${IMAGE_TAG}"
 	else
 	    abort "Docker mode not implemented"
 	fi

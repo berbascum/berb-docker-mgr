@@ -33,13 +33,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
+[ -z "$(echo "$*" | grep "\-\-run")" ] && abort "build_main: Needs to be called with yhe --run flag"
 
 ## Include libs
 . /usr/lib/berb-bash-libs/bbl_git_lib_${BBL_GIT_VERSION}
 
 fn_get_package_info() {
-    debug "TODO: fn_get_package_info from plugin_build_main"
+    debug "build_main: TODO: fn_get_package_info from plugin_build_main"
     ## Get the package version and release from the last commit tag (mandatory)
     #pkg_dist_channel_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $1}')"
     #package_version_tag="$(echo "${last_commit_tag}" | awk -F'/' '{print $2}')"
@@ -54,63 +54,63 @@ fn_update_main_src_file_version_var() {
     ## Update version info in the main bin src file' HEADER section
     ## First, search for a main src file
     arr_files_found=( $(find ./  -type f \( -name "*bin-main.*" -o -name "*lib-main.*" \)) )
-    debug " echo arr_files_found = ${arr_files_found[@]}"
+    debug "build_main: arr_files_found = ${arr_files_found[@]}"
     debug "\"${#arr_files_found[@]}\" files were found"
     ## Exit from funtion if no main source files found
     if [ "${#arr_files_found[@]}" -eq "0" ]; then
-	info "No main source files found. Skipping..."
+	info "build_main: No main source files found. Skipping..."
 	return
     ## Exit from funtion if there is many main source files since is not implemented yet
     elif [ "${#arr_files_found[@]}" -gt "1" ]; then
-	info "Many main src files feature not implemented yet!"
+	info "build_main: Many main src files feature not implemented yet!"
 	return
     elif [ "${#arr_files_found[@]}" -eq "1" ]; then
         main_src_relpath_file="${arr_files_found[0]}"
 	main_src_file="$(basename "${main_src_relpath_file}")"
-	debug "File main_src_relpath_file = \"${main_src_relpath_file}\" found"
+	debug "build_main: File main_src_relpath_file = \"${main_src_relpath_file}\" found"
     fi
     ## Get the main src's header section vars and put in arr_vars_found
     section="HEADER_SECTION" \
     	&& fn_bbgl_parse_file_section "${main_src_relpath_file}" "${section}" "search_varnames" "all"
-    debug "${section}: arr_vars_found = $(printf '%s\n' && printf '%s\n' ${arr_vars_found[@]})"
+    debug "build_main: ${section}: arr_vars_found = $(printf '%s\n' && printf '%s\n' ${arr_vars_found[@]})"
     ## If no vars found in HEADER section, exit the function
     [ "${#arr_vars_found[@]}" -eq "0" ] \
-	&& debug "No vars found on ${main_src_file}'s HEADER section" && return
+	&& debug "build_main: No vars found on ${main_src_file}'s HEADER section" && return
     ## Search for a BIN_TYPE var in HEADER section
     for header_var_def in ${arr_vars_found[@]}; do
         src_bin_type=$(echo ${header_var_def} | grep "^    BIN_TYPE=\"" | awk -F'"' '{print $2}')
 	[ -n "${src_bin_type}" ] && break
     done
-    debug "src_bin_type = ${src_bin_type}"
+    debug "build_main: src_bin_type = ${src_bin_type}"
     ## If no BIN_TYPE var found in HEADER section, exit the function
     [ -z "${src_bin_type}" ] \
-	&& debug "No BIN_TYPE var found on ${main_src_relpath_file}'s HEADER section" && return
+	&& debug "build_main: No BIN_TYPE var found on ${main_src_relpath_file}'s HEADER section" && return
     ## Update the needed vars in HEADER section if found
     sed -i "s/^    TOOL_VERSION=\".*/    TOOL_VERSION=\"${tag_version}\"/g" "${main_src_relpath_file}"
     sed -i "s/^    TOOL_RELEASE=\".*/    TOOL_RELEASE=\"${tag_release}\"/g" "${main_src_relpath_file}"
 }
 
 fn_copy_files_to_pkg_dir() {
-    ASK "Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
-    [ "${answer}" != "y" ] && debug "Copy to pkg_rootfs canceled by user!" && return
+    ASK "build_main: Want to copy the existing package files to the pkg_rootfs dir? [ y/n ]: "
+    [ "${answer}" != "y" ] && debug "build_main: Copy to pkg_rootfs canceled by user!" && return
     ## Get the upsetream name from debian/changelog
-    [ ! -f "debian/copyright" ] && error "debian/copyright file not found"
+    [ ! -f "debian/copyright" ] && error "build_main: debian/copyright file not found"
     upstream_name="$(cat debian/copyright | grep "^Upstream-Name:" | awk -F': ' '{print $2}')"
     ## Create dirs on pkg rootfs dir
     debian_install_exist=$(find "./debian" -maxdepth 1 -name "*.install")
-    [ -z "${debian_install_exist}" ] && error "No debian package install files found"
-    ASK "Want to clean the pkg_rootfs content first? [ y/n ]: "
+    [ -z "${debian_install_exist}" ] && error "build_main: No debian package install files found"
+    ASK "build_main: Want to clean the pkg_rootfs content first? [ y/n ]: "
     [ "${answer}" == "y" ] && rm -r -v ${pkg_rootfs_dir}/*
-    info "Copying the package files to the pkg rootfs dir..."
+    info "build_main: Copying the package files to the pkg rootfs dir..."
     ## Create pkg_rootfs dirs from debian packaging dirs files
     IFS=$' \t\n'
     for dirs_file in $(find ./debian -maxdepth 1 -name "*.dirs"); do
-	debug "\"${dirs_file}\" file found!"
+	debug "build_main: \"${dirs_file}\" file found!"
         dirs_basename=$(basename "${lib}")
         dirs_basename_noext=$(echo "${dirs_basename}" | awk -F'.' '{print $1}')
         if [ -f "${dirs_file}" ]; then 
             while read dir; do
-	        debug "Creating \"${dir}\" dir..."
+	        debug "build_main: Creating \"${dir}\" dir..."
                 [ ! -d "${pkg_rootfs_dir}${dir}" ] && mkdir -p ${pkg_rootfs_dir}${dir}
             done <${dirs_file}
         fi
@@ -142,7 +142,7 @@ fn_copy_files_to_pkg_dir() {
     [ -d "conf" ] && cp -av conf/*  ${pkg_rootfs_dir}/etc/${upstream_name}
     ## Copy the conf template files if found to the pkg rootfs dir
     [ -d "conf_templates" ] && cp -av conf_templates/*  ${pkg_rootfs_dir}/usr/share/${upstream_name}
-    PAUSE "Copy to pkg rootfs process finished. Press Intro to continue "
+    PAUSE "build_main: Copy to pkg rootfs process finished. Press Intro to continue "
 }
 
 fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
@@ -151,33 +151,33 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
     pkg_rootfs_dir="$1"
     systemd_etc_dir="etc/systemd/system"
     pkg_systemd_etc_dir="${pkg_rootfs_dir}/${systemd_etc_dir}"
-    info "Adding systemd wants links from pkg rootfs dir to debian .links and .dirs..."
+    info "build_main: Adding systemd wants links from pkg rootfs dir to debian .links and .dirs..."
     ## Check for systemd dir in the pkg_rootfs dir
     [ ! -d "${pkg_systemd_etc_dir}" ] \
-	&& info "No etc/systemd dir found in pkg_rootfs" && return
+	&& info "build_main: No etc/systemd dir found in pkg_rootfs" && return
     ## Search for debian pkging .links file
     arr_pkg_links_file=( $(find debian/ -name "${package_name}*.links") )
     [ "${#arr_pkg_links_file[@]}" -eq "0" ] \
 	&& warn "No .links file in debian dir" && return
     [ "${#arr_pkg_links_file[@]}" -gt "1" ] \
-	&& warn "Many .links files in debian dir" && return
+	&& warn "build_main: Many .links files in debian dir" && return
     pkg_links_file="${arr_pkg_links_file[0]}"
-    debug "Length arr_pkg_links_file = ${#arr_pkg_links_file[@]}" 
+    debug "build_main: Length arr_pkg_links_file = ${#arr_pkg_links_file[@]}" 
     ## Search for debian pkging .dirs file
     arr_pkg_dirs_file=( $(find debian/ -name "${package_name}*.dirs") )
     [ "${#arr_pkg_dirs_file[@]}" -eq "0" ] \
-	&& warn "No .dirs file in debian dir" && return
+	&& warn "build_main: No .dirs file in debian dir" && return
     [ "${#arr_pkg_dirs_file[@]}" -gt "1" ] \
-	&& warn "Many .dirs files in debian dir" && return
+	&& warn "build_main: Many .dirs files in debian dir" && return
     pkg_dirs_file="${arr_pkg_dirs_file[0]}"
-    debug "Length arr_pkg_dirs_file = ${#arr_pkg_dirs_file[@]}" 
+    debug "build_main: Length arr_pkg_dirs_file = ${#arr_pkg_dirs_file[@]}" 
     #
     ## Search for systemd services in the pkg_rootfs dir
     arr_service_files=()
     while IFS= read -r -d '' file; do
         arr_service_files+=("$file")
     done < <(find "${pkg_systemd_etc_dir}" -maxdepth 1 -name "*.service" -print0)
-    debug "arr_service_files[0] = ${arr_service_files[0]}"
+    debug "build_main: arr_service_files[0] = ${arr_service_files[0]}"
     #
     ## Add systemd service links to the debian/adaptation.links
     arr_services_wanted=()
@@ -194,23 +194,24 @@ fn_plugin_build_main_pkg_rootfs_systemd_links_add() {
 	[ -z "${wanted_dup}" ] && arr_services_wanted+=( "${wanted_by}" )
 	## Check if the service was previouslu added
 	link_found=$(cat ${pkg_links_file} | grep "${service_file_basename}")
-	debug "link_found = \"${link_found}\" if empty, service will be added"
+	debug "build_main: link_found = \"${link_found}\" if empty, service will be added"
         [ -n "${link_found}" ] && continue
 	## Add the service link to the debian .links file
         echo "/${systemd_etc_dir}/${service_file_basename} /${systemd_etc_dir}/${wanted_by}.wants/${service_file_basename}" >> ${pkg_links_file}
     done
     ## Add wanted dir in debian/.dirs file
-    debug "Length arr_services_wanted = ${#arr_services_wanted[@]}"
+    debug "build_main: Length arr_services_wanted = ${#arr_services_wanted[@]}"
     for service_wanted in "${arr_services_wanted[@]}"; do
 	## Check if the wanted dir was previouslu added
 	wanted_dir_found=$(cat ${pkg_dirs_file} | grep "${service_wanted}")
-	debug "wanted_dir_found = \"${wanted_dir_found}\" if empty, dir will be added"
+	debug "build_main: wanted_dir_found = \"${wanted_dir_found}\" if empty, dir will be added"
         [ -n "${wanted_dir_found}" ] && continue
 	## Add the service link to the debian .links file
         echo "/${systemd_etc_dir}/${service_wanted}.wants" >> ${pkg_dirs_file}
     done
-    info "Finished adding systemd wants links on debian .links and .dirs"
+    info "build_main: Finished adding systemd wants links on debian .links and .dirs"
 }
+
 fn_plugin_build_main_check_archs() {
     debug "Starting archs check from ${FUNCNAME[0]}"
     CROSS_ENABLE="False"
@@ -221,7 +222,18 @@ fn_plugin_build_main_check_archs() {
     ## If arch in debian/control != host_arch detected, multiarch is needed
     [ "${TARGET_ARCH_CONTROL}" != "${HOST_ARCH_DETECTED}" ] && CROSS_ENABLE="True" \
 	&& fn_bdm_docker_multiarch_enable
-    debug "Just exited from fn_bdm_docker_multiarch_enable"
+    debug "build_main: Just exited from fn_bdm_docker_multiarch_enable"
+}
+
+fn_check_for_debian_control() {
+        ## Check for debian control
+        fn_bblgit_debian_control_found # Abort if not
+        debug "build_main: debian/control file check passed"
+}
+
+fn_get_control_pkg_name() {
+    ## Get the package name from debian control
+    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 }
 
 fn_plugin_build_main_pkg_source_type_detection() {
@@ -229,89 +241,123 @@ fn_plugin_build_main_pkg_source_type_detection() {
     START_DIR=$(pwd)
     ## check for git dir
     fn_bblgit_dir_is_git # Abort if not
-    ## Check for debian control
-    fn_bblgit_debian_control_found # Abort if not
-    ## Get the package name from debian control
-    package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
-    debug "dir .git and debian/control checks passed"
+    debug "build_main: dir .git check passed"
     # Cerca el dir pkg_rootfs
     if [ -e "${START_DIR}/pkg_rootfs" ]; then
+        ## Check for debian control
+        fn_check_for_debian_control
+	## Set package_name
+        fn_get_control_pkg_name
 	## Set docker mode
 	docker_mode="package"
 	pkg_type="debian_package"
 	pkg_rootfs_dir="pkg_rootfs"
-	info "Package type detected: \"${pkg_type}\""
+	info "build_main: Package type detected: \"${pkg_type}\""
 	## Source the corresponding pkg_type lib
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
+    #
+    # Cerca el dir rootfs-templates
+    elif [ -e "${START_DIR}/rootfs-templates" ]; then
+	docker_mode="droidian-rootfs"
+	pkg_type="droidian_rootfs"
+	info "Droidian rootfs recipes detected"
+	package_name="droidian-images"
+	## Load build droidian main plugin
+	[ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
+            && abort "build_droidian_main library not found!"
+        . ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
+        fn_plugin_build_droidian_main_set_user_config
+        fn_plugin_build_droidian_main_load_device_vars
+	## Source the corresponding sub-plugin
+	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
+    #
     # Cerca el dir sparse
     elif [ -e "${START_DIR}/sparse" ]; then
+        ## Check for debian control
+        fn_check_for_debian_control
+	## Set package_name
+        fn_get_control_pkg_name
 	## Set docker mode
 	docker_mode="package"
 	pkg_rootfs_dir="sparse"
-	debug "sparse dir detected, checking type..."
+	debug "build_main: sparse dir detected, checking type..."
 	## sparse dir found, may be a droidian package
 	[ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
-	    && abort "build_droidian_main library not found!"
-	debug "May be a Droidian package, loading build_droidian_main lib..."
+	    && abort "build_main: build_droidian_main library not found!"
+	debug "build_main: May be a Droidian package, loading build_droidian_main lib..."
 	. ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
         fn_plugin_build_droidian_main_set_user_config
         fn_plugin_build_droidian_main_load_device_vars
 	#
 	## Get the package type
-	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" ]; then
+	if [ -f "debian/adaptation-${vendor}-${codename}-configs.install" -o -f "debian/adaptation-${vendor}-${codename}-api${apiver}-configs.install" ]; then
 	    pkg_type="droidian_adaptation"
-	    debug "Package type detected: \"${pkg_type}\""
+	    debug "build_main: Package type detected: \"${pkg_type}\""
 	    ## Import the build droidian package lib
 	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
-	        && error "build_droidian_adaptation library not found!"
-	    debug "Loading plugin_build_${pkg_type} lib..."
+	        && error "build_main: build_droidian_adaptation library not found!"
+	    debug "build_main: Loading plugin_build_${pkg_type} lib..."
 	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
         else
-	    abort "Package is using sparse dir model, but type is not recognized!"
+	    abort "build_main: Package is using sparse dir model, but type is not recognized!"
 	fi
-    # Cerca un arxiu README de linux kernel
+    # Cerca un arxiu Makefile de linux kernel
     elif [ -e "$START_DIR/Makefile" ]; then
-	    ## Check if is kernel
-            IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
-            [ -z "${IS_KERNEL}" ] \
-	        && abort "No Linux kernel source found in current dir."
-            #APT_INSTALL_EXTRA="releng-tools"
-	    info "Kernel source dir detected!"
-	    docker_mode="kernel"
+	## Check if is kernel
+        IS_KERNEL=$(cat $START_DIR/Makefile | grep "^KERNELRELEASE =")
+        [ -z "${IS_KERNEL}" ] \
+	    && abort "build_main: No Linux kernel Makefile found in the current dir."
+        #APT_INSTALL_EXTRA="releng-tools"
+	info "build_main: Kernel source dir detected!"
+	docker_mode="kernel"
+        ## kernel Makefile, may be a droidian kernel
+	debug "build_main: Lets check for a known packaging..."
+	if [ -f "${START_DIR}/debian/kernel-info.mk" ]; then
+	debug "build_main: kernel-info.mk not found!"
+	    ## TODO: no pkg_name implemented yet
+	    ## for droidian_kernel
+	    ## since the control file mauy not exist
+	    ## INFO: CONTAINER_NAME for droidian_kernels
+	    ## will be the source code base dir name
+	    ## since control may contain the same pkg_name
+	    ## in diferent sources when test or develop
 	    pkg_type="droidian_kernel"
-    	    ## sparse dir found, may be a droidian package
+            # Set KERNEL_NAME to current dir name
+            pkg_dir_name=$(basename ${START_DIR})
+	    info "${pkg_type} detected!"
+	    debug "build_main: loading build_droidian_main lib..."
+	    ## Load build_droidian plugin main lib
 	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh" ] \
-	        && abort "build_droidian_main library not found!"
-	    debug "May be a Droidian package, loading build_droidian_main lib..."
+	        && abort "build_main: build_droidian_main library not found!"
 	    . ${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_droidian_main.sh --run
             fn_plugin_build_droidian_main_set_user_config
             fn_plugin_build_droidian_main_load_device_vars
 	    ## Import the build droidian kernel plugin
 	    [ ! -f "${LIBS_FULLPATH}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh" ] \
-	        && error "build_droidian_adaptation library not found!"
-	    debug "Loading plugin_build_${pkg_type} lib..."
+	        && error "build_main: build_droidian_adaptation library not found!"
+	    debug "build_main: Loading plugin_build_${pkg_type} lib..."
 	    . /usr/lib/${TOOL_NAME}/bdm_plugin_${plugin_enabled}_${pkg_type}.sh --run
-	    ## Load berb-build-droidian-kernel.sh
-	    #info "Cal implementar alguna cosa que sapiga que és kernel droidian"
-	    #pause "tipus ask What type of kernel source you want to build?"
+	else
+            abort "build_main: Not supported kernel packaging"
+	fi
     else
-        abort "Not supported package dir found!"
+        abort "build_main: Not supported package dir found!"
     fi
 }
 
 fn_plugin_build_main_docker_container_reqs() {
     ## Check that the container name is created
     if [ -z "$(docker ps -a | grep "${CONTAINER_NAME}")" ]; then
-        INFO "The docker container needs to be previously created"
+        INFO "build_main: The docker container needs to be previously created"
         ASK "Want to create \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
-        [ "${answer}" != "y" ] && abort "Aborted by user"
+        [ "${answer}" != "y" ] && abort "build_main: Aborted by user"
 	fn_bdm_docker_create_container
     fi
     ## Check that the container name is started
     if [ -z "$(docker ps | grep "${CONTAINER_NAME}")" ]; then
-        INFO "The docker container needs to be previously started!"
+        INFO "build_main: The docker container needs to be previously started!"
         ASK "Want to start \"${CONTAINER_NAME}\" docker container? [ y/n ]: "
-        [ "${answer}" != "y" ] && abort "Aborted by user"
+        [ "${answer}" != "y" ] && abort "build_main: Aborted by user"
         fn_bdm_docker_start_container
         ## Check architectures
     fi

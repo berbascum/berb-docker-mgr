@@ -88,7 +88,7 @@ fn_build_package_on_container() {
         echo "export CXX=${cross_arch}-linux-gnu-g++" >> ${SOURCES_FULLPATH}/${script}
         echo "export CROSS_COMPILE=${cross_arch}-linux-gnu-" >> ${SOURCES_FULLPATH}/${script}
         echo "## Build package" >> ${SOURCES_FULLPATH}/${script}
-        echo "dpkg-buildpackage -us -uc -Pcross" >> ${SOURCES_FULLPATH}/${script}
+        echo "dpkg-buildpackage -us -uc -v" >> ${SOURCES_FULLPATH}/${script}
     else
         echo "## Build package" >> ${SOURCES_FULLPATH}/${script}
         echo "dpkg-buildpackage -us -uc" >> ${SOURCES_FULLPATH}/${script}
