@@ -3,9 +3,20 @@
 # Permissions: write:packages read:packages delete:packages repo (for private repos)
 
 # Login GHCR
-#echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+GITHUB_TOKEN=""
+USERNAME="berbascum"
+IMAGE_NAME="berb-build-env"
+ARCH="arm64"
 
-#docker tag my-image:1.0.0 ghcr.io/USERNAME/my-image:1.0.0
+## Get images
+#curl -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/users/${USERNAME}/packages?package_type=container
 
-#docker push ghcr.io/USERNAME/my-image:1.0.0
+## Get images tags
+#curl -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" https://api.github.com/users/${USERNAME}/packages/container/${IMAGE_NAME}/versions
+
+echo ${GITHUB_TOKEN} | docker login ghcr.io -u ${USERNAME} --password-stdin
+
+docker tag ${IMAGE_NAME}:${SUITE}-${ARCH} ghcr.io/${USERNAME}/${SUITE}-${ARCH}
+
+docker push ghcr.io/${USERNAME}/${SUITE}-${ARCH}
 
