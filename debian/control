@@ -10,6 +10,7 @@ Package: berb-docker-mgr
 Architecture: all
 Depends: ${misc:Depends},
          docker.io,
+         fzf,
 	 wget,
          bbl-net-lib (>= 1.0.0.1),
          bbl-general-lib (>= 1.1.0.1),
