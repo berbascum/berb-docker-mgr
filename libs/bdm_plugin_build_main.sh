@@ -233,6 +233,7 @@ fn_check_for_debian_control() {
 
 fn_get_control_pkg_name() {
     ## Get the package name from debian control
+    ## TODO: review var name
     package_name=$(cat debian/control | grep "^Source: " | awk '{print $2}')
 }
 
