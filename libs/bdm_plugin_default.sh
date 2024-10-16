@@ -41,9 +41,12 @@ fn_docker_plugin_container_vars() {
     #fn_bdm_conf_file_load "CONF_USER_MAIN" "docker-container-vars"
 
     ## Docker constants
-    CONTAINER_BASE_NAME="berb-linux-env"
-    IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
-    IMAGE_BASE_TAG="${host_suite}-${host_arch}"
+    [ -z "${CONTAINER_BASE_NAME}" ] \
+        && CONTAINER_BASE_NAME="berb-linux-env"
+    [ -z "${IMAGE_BASE_NAME}" ] \
+        && IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
+    [ -z "${IMAGE_BASE_TAG}" ] \
+        && IMAGE_BASE_TAG="${host_suite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb-linux-env-upg'
     IMAGE_COMMIT_TAG="${host_suite}-${host_arch}"
