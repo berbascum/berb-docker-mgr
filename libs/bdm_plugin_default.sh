@@ -42,11 +42,11 @@ fn_docker_plugin_container_vars() {
 
     ## Docker constants
     [ -z "${CONTAINER_BASE_NAME}" ] \
-        && CONTAINER_BASE_NAME="berb-linux-env"
+        && CONTAINER_BASE_NAME="berb-debian-base"
     [ -z "${IMAGE_BASE_NAME}" ] \
-        && IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
+        && IMAGE_BASE_NAME="ghcr.io/berbascum/berb-debian-base"
     [ -z "${IMAGE_BASE_TAG}" ] \
-        && IMAGE_BASE_TAG="${host_suite}-${host_arch}"
+        && IMAGE_BASE_TAG="${host_suite}${host_subsuite}-${host_arch}"
     CONTAINER_COMMITED_NAME="${CONTAINER_BASE_NAME}"
     IMAGE_COMMIT_NAME='berb-linux-env-upg'
     IMAGE_COMMIT_TAG="${host_suite}-${host_arch}"
