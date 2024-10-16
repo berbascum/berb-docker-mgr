@@ -22,7 +22,7 @@ extra_packages=(
 extra_packages_string=$(printf "%s " "${extra_packages[@]}")
 
 ## Image creation
-docker build -f Dockerfile_${IMG_DISTRO}_${IMG_SUITE}${IMG_SUBSUITE}_${IMG_ARCH} --build-arg EXTRA_PACKAGES="$extra_packages_string" -t ${IMG_NAME}:${IMG_SUITE}${IMG_SUBSUITE}-${IMG_ARCH} .
+docker build -f Dockerfile_${IMG_NAME}_${IMG_SUITE}${IMG_SUBSUITE}_${IMG_ARCH} --build-arg EXTRA_PACKAGES="$extra_packages_string" -t ${IMG_NAME}:${IMG_SUITE}${IMG_SUBSUITE}-${IMG_ARCH} .
 
 ## Tag as remote
 echo ""
