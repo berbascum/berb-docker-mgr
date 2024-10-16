@@ -1,11 +1,45 @@
 # berb-docker-mgr
 Bash script to manage docker containers.
 
-### Installation
+## Design
+- The main script contain the general docker commands.
+
+- There are plugins to enable different type of containers.
+
+- Container types are primarily classified by the image to use.
+
+- Some plugins may have subplugins as plugin subtypes.
+
+## Plugins
+Currently there are two plugins
+
+### 1- Default:
+As is the default plugin, it will be used if no any plugin is specified as script argument.
+
+This plugin creates a container using the berb base image "berb-linux-env" and a generic container name, both currently defined in bdm_plugin_default.sh.
+
+But if there is a file named docker-custom.conf in the current dir, the vars defined on it will ebe used instead.
+
+### 2- Build:
+When this plugin is enabled the script bdm_plugin_build_main.sh will be loaded.
+Depending on the current dir content, the needed sub-plugin will be automatically selected.
+
+This plugin sets the as the current directory name as container_name.
+
+Currently there are next subplugins:
+- Build Debian standard package
+- Build Droidian adaptation
+- Build Droidian kernel
+
+## Installation
 Add the berb-apt-git-repo and apt-get install berb-docker-mgr
 
-### Usage
-
+## Usage
+### Default plugin
+berb-docker-mgr [--log-level=1]
+### Build plugin
+berb-docker-mgr [--log-level=1] --plugin=build
+ 
 ## Tips
 
 ### Enable cross compile in container
