@@ -1,0 +1,12 @@
+# Debian trixie slim arm64
+
+FROM ghcr.io/berbascum/berb-debian-base:trixie-slim-arm64
+
+# Install extra packages
+ARG EXTRA_PACKAGES=""
+ENV EXTRA_PACKAGES ${EXTRA_PACKAGES}
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends ${EXTRA_PACKAGES} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+CMD ["bash"]
