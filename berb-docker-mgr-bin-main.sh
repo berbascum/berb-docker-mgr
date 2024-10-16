@@ -86,6 +86,13 @@ fn_bdm_global_conf() {
     fn_bbgl_check_args_search_flag "plugin" $@
     debug "FLAG_FOUND_VALUE = ${FLAG_FOUND_VALUE}"
 
+    ## Check for override docker-custom.conf
+    if [ -f "docker-custom.conf" ]; then
+        info "loading docker-custom.conf..."
+        sleep 5
+        source "docker-custom.conf"
+    fi
+    ## Finally set the plugin to use
     if [ -n "${FLAG_FOUND_VALUE}" ]; then
         plugin_enabled="${FLAG_FOUND_VALUE}"
 	debug "plugin_enabled = ${plugin_enabled}"
