@@ -35,8 +35,11 @@
 
 [ -z "$(echo "$@" | grep "\-\-run")" ] && abort "Needs to be called with yhe --run flag"
 
-fn_docker_plugin_container_conf() {
+fn_docker_plugin_container_vars() {
     docker_mode="default"
+    ## TODO: Docker container vars, universalize since now is for the build plugin
+    #fn_bdm_conf_file_load "CONF_USER_MAIN" "docker-container-vars"
+
     ## Docker constants
     CONTAINER_BASE_NAME="berb-linux-env"
     IMAGE_BASE_NAME="ghcr.io/berbascum/berb-linux-env"
@@ -46,9 +49,17 @@ fn_docker_plugin_container_conf() {
     IMAGE_COMMIT_TAG="${host_suite}-${host_arch}"
 }
 
-fn_docker_plugin_container_conf
+fn_docker_plugin_container_conf() {
+    ## Add systemd services from pkg_rootfs_dir/etc/systemd/system to .links and .dir files
+    debug "fn_docker_plugin_container_conf has no any code yet!"
+}
+
+fn_docker_plugin_container_vars
 fn_bdm_docker_container_config
-fn_bdm_docker_global_config
+#fn_plugin_build_main_docker_container_reqs
+
+fn_docker_plugin_container_conf
+fn_bdm_docker_main_menu
 arr_actions_plugin=( "exit" )
 declare -g arr_data=( "${arr_actions_plugin[@]}" "${arr_actions_base[@]}" )
 
